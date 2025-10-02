@@ -1,54 +1,61 @@
-export const SelectTravelesList=[
-    {
-        id:1,
-        title:'Solo Traveler',
-        desc:'Traveling solo can be a great way to explore new destinations, meet new people, and learn more about yourself. You can go at your own pace, do what you want, and have the freedom to change your plans at any time.',
-        icon:'🧍',
-        people:'1'
-    },
-    {
-        id:2,
-        title:'Couple Traveler',
-        desc:'Traveling as a couple can be a great way to strengthen your relationship and create lasting memories together. You can explore new places, try new things, and enjoy quality time together.',
-        icon:'👫',
-        people:'2'
-    },
-    {
-        id:3,
-        title:'Family Traveler',
-        desc:'Traveling with your family can be a great way to spend quality time together and create lasting memories. You can explore new places, try new things, and bond over shared experiences.',
-        icon:'👨‍👩‍👧‍👦',
-        people:'3 to 5 people'
-    },
-    {
-        id:4,
-        title:'Friends Traveler',
-        desc:'Traveling with friends can be a fun and exciting way to explore new destinations. You can share new experiences, try new things, and create lasting memories together.',
-        icon:'🍻',
-        people:'5 to 10 people'
-    },
-]
+export const SelectTravelesList = [
+  {
+    id: 1,
+    title: 'Solo Space Enthusiast',
+    desc:
+      "Exploring NASA on your own means following your curiosity—tour a NASA visitor center, watch a live launch stream, browse mission dashboards (JWST, Mars rovers), and stargaze with citizen-science apps at your own pace.",
+    icon: '🧑‍🚀',
+    people: '1',
+  },
+  {
+    id: 2,
+    title: 'Cosmic Duo',
+    desc:
+      "Share the wonder of space together—plan a couples trip to Kennedy Space Center, visit planetariums, track the ISS pass overhead, and enjoy night-sky photo walks under dark skies.",
+    icon: '👩‍🚀👨‍🚀',
+    people: '2',
+  },
+  {
+    id: 3,
+    title: 'Family Space Crew',
+    desc:
+      "Turn learning into adventure—build model rockets, explore kid-friendly exhibits at NASA centers, follow Artemis updates, and complete STEM activities that make planets, rovers, and galaxies come alive.",
+    icon: '👨‍👩‍👧‍👦',
+    people: '3 to 5 people',
+  },
+  {
+    id: 4,
+    title: 'Mission Team (Friends)',
+    desc:
+      "Assemble your launch team—road-trip to multiple NASA sites, book group tours, host meteor-watch parties, and track deep-space missions together like a real operations room.",
+    icon: '🚀',
+    people: '5 to 10 people',
+  },
+];
 
-export const SelectBudgetOptions=[ 
-    {
-        id:1,
-        title:'Cheap',
-        desc:'You can find affordable accommodations, eat cheaply, and take advantage of free or low-cost activities.',
-        icon:'💵',
-        budget:'$'
-    },
-    {
-        id:2,
-        title:'Mid-Range',
-        desc:'You can stay in comfortable accommodations, eat well, and enjoy a range of activities without spending a fortune.',
-        icon:'💰',
-        budget:'$$'
-    },
-    {
-        id:3,
-        title:'Luxury',
-        desc:'You can stay in luxurious accommodations, eat at top restaurants, and enjoy exclusive',
-        icon:'💸',
-        budget:'$$$'
-    }
-]
+export const SelectBudgetOptions = [
+  {
+    id: 1,
+    title: 'CubeSat Budget',
+    desc:
+      "Enjoy NASA on a shoestring—free livestreams and podcasts, museum free days, open data explorations, local star parties, and citizen-science projects that cost little to nothing.",
+    icon: '💵',
+    budget: '$',
+  },
+  {
+    id: 2,
+    title: 'Explorer-Class',
+    desc:
+      "Balance comfort and discovery—tickets for visitor centers and planetariums, guided tours, astronomy workshops, and a night or two near a dark-sky site for quality observations.",
+    icon: '💰',
+    budget: '$$',
+  },
+  {
+    id: 3,
+    title: 'Flagship Mission',
+    desc:
+      "Go all-in on space experiences—VIP launch viewing packages (when available), behind-the-scenes style tours, premium astrophotography outings, and multi-center itineraries.",
+    icon: '💸',
+    budget: '$$$',
+  },
+];

@@ -1,16 +1,12 @@
-# **Travel AI**
-This project is an AI-powered travel recommendation application that uses a **RAG (Retrieval-Augmented Generation) pipeline** combined with **Gemini API** to provide travel suggestions and answers to user queries.
-
----
-
-## **[Demo Video](https://youtu.be/ey3BswBJIlE?si=knBOVUfLSA4Oulps)**
+# **NASA-Hackathon**
+This project is...
 
 ---
 
 ## **Project Structure**
 
 ```
-ai-travel-planner/
+NASA-Hackthon/
 │
 ├── backend/                   # Backend for RAG + Gemini API
 │   ├── app.py                 # Main backend server using Flask
@@ -53,8 +49,7 @@ ai-travel-planner/
 ### **1. Clone the Repository**
 
 ```bash
-git clone https://github.com/raelee1026/Travel-AI.git
-cd ai-travel-planner
+git clone https://github.com/dfsb4/NASA-Hackathon.git
 ```
 
 ---

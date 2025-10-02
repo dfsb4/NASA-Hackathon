@@ -11,7 +11,12 @@ function App() {
   return (
     <>
       {/*Hero*/}
-      <Hero/>
+      {/* <Hero/> */}
+      <div className="min-h-screen w-full bg-[radial-gradient(1200px_600px_at_50%_-20%,#1e3a8a_0%,#0b1020_60%,#000_100%)]">
+        <main className="container mx-auto px-4 py-10">
+          <Hero />
+        </main>
+      </div>
 
 
     </>
