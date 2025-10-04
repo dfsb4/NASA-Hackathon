@@ -16,7 +16,7 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"ok": True}
+    return {"DFSB4-NASA-Hackathon": True}
 
 class EchoIn(BaseModel):
     message: str

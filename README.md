@@ -87,13 +87,13 @@ git clone https://github.com/dfsb4/NASA-Hackathon.git
 5. **Start the Backend Server:**
 
    ```bash
-   python3 app.py
+   vicorn main:app --host 0.0.0.0 --port 8000
    ```
 
 6. **Backend Server** will run at:
 
    ```
-   http://127.0.0.1:5000
+   curl http://127.0.0.1:8000/api/health
    ```
 
 ---
