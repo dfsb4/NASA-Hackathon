@@ -110,6 +110,7 @@ git clone https://github.com/dfsb4/NASA-Hackathon.git
 
    ```bash
    npm install
+   npm install react-simple-maps d3-geo
    ```
 
 3. **Start the Vite Development Server:**
