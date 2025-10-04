@@ -42,15 +42,17 @@ function Header() {
   }
 
   return (
-    <div className='p-3 shadow-sm flex justify-between items-center px-5 background: dark-gray-800 bg-nasa-dark-gray-azure/90 ring-1 ring-white/10'>
+    <div id="site-header" className='p-3 shadow-sm flex justify-between items-center px-5 background: dark-gray-800 bg-nasa-dark-gray-azure/90 ring-1 ring-white/10'>
       <div className="flex items-center gap-1">
         <img src="/weatherlens.svg" className="w-16 h-12" alt="WeatherLens logo" />
-        <span className="text-sm font-semibold text-nasa-muted" style={{fontFamily: '"DM Serif Display", serif', fontWeight: '400', fontStyle: 'normal', display: "inline", color: "var(--nasa-muted)", fontSize: "32px", letterSpacing: '0.1em'}}>WeatherLens</span>
+        <span className="text-sm font-semibold text-nasa-muted" style={{background: "var(--nasa-dark-gray-azure)", fontFamily: '"DM Serif Display", serif', fontWeight: '400', fontStyle: 'normal', display: "inline", color: "var(--nasa-muted)", fontSize: "32px", letterSpacing: '0.1em'}}>WeatherLens</span>
       </div>
-
-      <time className="time text-sm font-semibold text-nasa-muted" dateTime={now.toISOString()} style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', paddingRight: '10px', letterSpacing: '0.15em'}}>
-        {formatNow(now)}
-      </time>
+      <div className="flex items-center gap-3 ml-auto pr-1">
+        <button className="text-white px-4 py-2 rounded-full font-semibold">Time</button>
+        <time className="time text-sm font-semibold text-nasa-muted" dateTime={now.toISOString()} style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', letterSpacing: '0.15em'}}>
+          {formatNow(now)}
+        </time>
+      </div>
     </div>
   )
 }

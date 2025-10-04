@@ -21,7 +21,7 @@ function App() {
           <Hero />
         </main>
       </div> */}
-      <div className="w-screen min-h-screen bg-gray-800 flex items-center justify-center">
+      <div className="w-screen bg-gray-800 flex items-start justify-center">
         <WeatherLensMap />
       </div>
 

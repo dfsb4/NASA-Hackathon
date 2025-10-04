@@ -103,8 +103,8 @@ export default function WeatherLensMap() {
     if (curInv && startLon !== null && startLon !== undefined) {
       const curLon = curInv[0];
       const deltaLon = curLon - startLon;
-      // drag right -> world should move left: subtract delta from start rotation
-      const newRotation = startRotationRef.current - deltaLon;
+      // flip horizontal drag: drag right -> world should move right (match pointer)
+      const newRotation = startRotationRef.current + deltaLon;
       rotationRef.current = newRotation;
       setRotationLon(newRotation);
     }
@@ -135,6 +135,30 @@ export default function WeatherLensMap() {
     if (containerRef.current) containerRef.current.style.cursor = "grab";
   }, []);
 
+  // Make map fill remaining viewport below header
+  const [containerHeightPx, setContainerHeightPx] = useState(null);
+  useEffect(() => {
+    const resize = () => {
+      const header = document.getElementById('site-header');
+      const headerH = header ? header.getBoundingClientRect().height : 0;
+      const h = Math.max(window.innerHeight - headerH, 200);
+      setContainerHeightPx(h);
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    // also observe header size in case it changes dynamically
+    const headerEl = document.getElementById('site-header');
+    let ro;
+    if (headerEl && typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(resize);
+      ro.observe(headerEl);
+    }
+    return () => {
+      window.removeEventListener('resize', resize);
+      if (ro && headerEl) ro.unobserve(headerEl);
+    };
+  }, []);
+
   const handleTest = async () => {
     setTesting(true);
     try {
@@ -154,8 +178,8 @@ export default function WeatherLensMap() {
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      className="relative w-full h-[500px] sm:h-[600px] md:h-[700px] bg-gradient-to-r from-gray-700 to-gray-600 rounded-2xl p-0 overflow-hidden"
-      style={{ touchAction: "none" }}
+      className="relative w-full to-gray-600 rounded-2xl p-0 overflow-hidden"
+      style={{ touchAction: "none", height: containerHeightPx ? `${containerHeightPx}px` : '80vh' }}
     >
       {/* Overlaid label in the top-left of the map (inside the relative container). */}
       <h2 className="absolute top-4 left-4 z-20 text-white text-2xl font-semibold bg-black/30 px-3 py-1 rounded pointer-events-none" style={{fontFamily: '"DM Serif Display", serif', fontWeight: '400', fontStyle: 'normal', display: "inline", color: "var(--nasa-muted)", fontSize: "24px", letterSpacing: '0.15em'}}>
@@ -207,12 +231,12 @@ export default function WeatherLensMap() {
         <button
           onClick={handleTest}
           disabled={testing}
-          className="bg-stone-800 hover:bg-stone-600 disabled:opacity-60 disabled:cursor-not-allowed text-white px-5 py-2 rounded-full font-semibold"
+          className="disabled:opacity-60 disabled:cursor-not-allowed text-white px-5 py-2 rounded-full font-semibold"
         >
           {testing ? "Testing..." : "Test"}
         </button>
 
-        <button className="bg-blue-800 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-semibold">
+        <button className="text-white px-6 py-2 rounded-full font-semibold">
           Predict
         </button>
 
