@@ -219,7 +219,7 @@ export default function WeatherLensMap() {
       >
         {/* draw a background rect so when the geographies are translated we don't reveal the container bg */}
         <g>
-          <rect x={0} y={0} width={VB_W} height={VB_H} fill="#111" />
+          <rect x={0} y={0} width={VB_W} height={VB_H} fill="#333" />
           <g transform={`translate(0, ${panY})`}>
             <Geographies geography={geoUrl}>
               {({ geographies }) => {

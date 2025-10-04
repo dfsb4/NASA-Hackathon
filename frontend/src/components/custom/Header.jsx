@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import TimePicker from './TimePicker'
 
 function Header() {
   const [now, setNow] = useState(new Date())
@@ -58,10 +59,22 @@ function Header() {
   const openPicker = () => setPickerOpen(true)
   const closePicker = () => setPickerOpen(false)
 
-  const onSetTime = (isoTime) => {
-    // isoTime is like "HH:MM" from <input type=time>
-    setUserTime(isoTime)
+  const onSetTime = (isoISO) => {
+    // isoISO is like 'YYYY-MM-DDTHH:MM'
+    setUserTime(isoISO)
     closePicker()
+  }
+
+  const formatISO = (iso) => {
+    try {
+      const [d, t] = iso.split('T')
+      const [y, m, day] = d.split('-').map((s) => Number(s))
+      const [hh, mm] = t.split(':').map((s) => Number(s))
+      const dt = new Date(y, m - 1, day, hh, mm)
+      return formatNow(dt)
+    } catch (e) {
+      return iso
+    }
   }
 
   return (
@@ -73,38 +86,13 @@ function Header() {
         </div>
         <div className="flex items-center gap-3 ml-auto pr-1">
           <button onClick={openPicker} className="text-white px-4 py-2 rounded-full font-semibold">Time</button>
-          <time className="time text-sm font-semibold text-nasa-muted" dateTime={now.toISOString()} style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', letterSpacing: '0.15em'}}>
-            {formatNow(now)}
+          <time className="time text-sm font-semibold text-nasa-muted" dateTime={(userTime || now.toISOString())} style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', letterSpacing: '0.15em'}}>
+            {userTime ? formatISO(userTime) : formatNow(now)}
           </time>
         </div>
       </div>
 
-      {pickerOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
-          {/* backdrop */}
-          <div onClick={closePicker} className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-
-          {/* sheet */}
-          <div className="relative w-full max-w-xl bg-[#0b1020] rounded-t-2xl p-4" style={{boxShadow: '0 -20px 40px rgba(2,6,23,0.6)'}}>
-            <div className="flex items-center justify-between mb-3">
-              <button onClick={closePicker} className="text-nasa-muted px-3 py-2">取消</button>
-              <div className="text-white font-semibold">選擇時間</div>
-              <button onClick={() => {
-                // read value from input
-                const el = document.getElementById('time-input');
-                if (el) onSetTime(el.value);
-              }} className="text-nasa-muted px-3 py-2">設定</button>
-            </div>
-
-            <div className="flex items-center justify-center py-6">
-              {/* native time input with large font to approximate iOS picker feel */}
-              <input id="time-input" type="time" defaultValue={userTime || (new Date()).toTimeString().slice(0,5)} step="60" className="bg-transparent text-white text-4xl font-semibold p-2 appearance-none" style={{fontFamily: '"DM Serif Display", serif', outline: 'none', border: 'none'}} />
-            </div>
-
-            <div className="mt-4 text-sm text-nasa-muted text-center">使用本介面選擇時間（24 小時）</div>
-          </div>
-        </div>
-      )}
+      <TimePicker isOpen={pickerOpen} onClose={closePicker} onSet={onSetTime} initialISO={userTime} />
     </>
   )
 }
