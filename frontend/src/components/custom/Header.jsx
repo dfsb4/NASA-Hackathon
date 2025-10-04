@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import TimePicker from './TimePicker'
 
 function Header() {
   const [now, setNow] = useState(new Date())
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [userTime, setUserTime] = useState(null)
 
   useEffect(() => {
     // update every minute on the minute
@@ -41,19 +44,56 @@ function Header() {
     return `${year} ${month} ${day}${ordinal(day)} ${hours}:${mins}`
   }
 
+  // prevent background scrolling when picker is open
+  useEffect(() => {
+    if (pickerOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [pickerOpen])
+
+  const openPicker = () => setPickerOpen(true)
+  const closePicker = () => setPickerOpen(false)
+
+  const onSetTime = (isoISO) => {
+    // isoISO is like 'YYYY-MM-DDTHH:MM'
+    setUserTime(isoISO)
+    closePicker()
+  }
+
+  const formatISO = (iso) => {
+    try {
+      const [d, t] = iso.split('T')
+      const [y, m, day] = d.split('-').map((s) => Number(s))
+      const [hh, mm] = t.split(':').map((s) => Number(s))
+      const dt = new Date(y, m - 1, day, hh, mm)
+      return formatNow(dt)
+    } catch (e) {
+      return iso
+    }
+  }
+
   return (
-    <div id="site-header" className='p-3 shadow-sm flex justify-between items-center px-5 background: dark-gray-800 bg-nasa-dark-gray-azure/90 ring-1 ring-white/10'>
-      <div className="flex items-center gap-1">
-        <img src="/weatherlens.svg" className="w-16 h-12" alt="WeatherLens logo" />
-        <span className="text-sm font-semibold text-nasa-muted" style={{background: "var(--nasa-dark-gray-azure)", fontFamily: '"DM Serif Display", serif', fontWeight: '400', fontStyle: 'normal', display: "inline", color: "var(--nasa-muted)", fontSize: "32px", letterSpacing: '0.1em'}}>WeatherLens</span>
+    <>
+      <div id="site-header" className='p-3 shadow-sm flex justify-between items-center px-5 background: dark-gray-800 bg-nasa-dark-gray-azure/90 ring-1 ring-white/10'>
+        <div className="flex items-center gap-1">
+          <img src="/weatherlens.svg" className="w-16 h-12" alt="WeatherLens logo" />
+          <span className="text-sm font-semibold text-nasa-muted" style={{background: "var(--nasa-dark-gray-azure)", fontFamily: '"DM Serif Display", serif', fontWeight: '400', fontStyle: 'normal', display: "inline", color: "var(--nasa-muted)", fontSize: "32px", letterSpacing: '0.1em'}}>WeatherLens</span>
+        </div>
+        <div className="flex items-center gap-3 ml-auto pr-1">
+          <button onClick={openPicker} className="text-white px-4 py-2 rounded-full font-semibold">Time</button>
+          <time className="time text-sm font-semibold text-nasa-muted" dateTime={(userTime || now.toISOString())} style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', letterSpacing: '0.15em'}}>
+            {userTime ? formatISO(userTime) : formatNow(now)}
+          </time>
+        </div>
       </div>
-      <div className="flex items-center gap-3 ml-auto pr-1">
-        <button className="text-white px-4 py-2 rounded-full font-semibold">Time</button>
-        <time className="time text-sm font-semibold text-nasa-muted" dateTime={now.toISOString()} style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', letterSpacing: '0.15em'}}>
-          {formatNow(now)}
-        </time>
-      </div>
-    </div>
+
+      <TimePicker isOpen={pickerOpen} onClose={closePicker} onSet={onSetTime} initialISO={userTime} />
+    </>
   )
 }
 
