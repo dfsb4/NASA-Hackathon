@@ -25,6 +25,8 @@ export default function WeatherLensMap() {
   const panYRef = useRef(0); // vertical translate in viewBox pixels
   const [panY, setPanY] = useState(0);
   const draggingRef = useRef(false);
+  const geographiesRef = useRef(null);
+  const [country, setCountry] = useState(null);
 
   // Pointer drag start refs
   const startPointerViewRef = useRef({ x: 0, y: 0 }); // viewBox coords at pointer start
@@ -64,6 +66,28 @@ export default function WeatherLensMap() {
     if (inverted) {
       const [lon, lat] = inverted;
       setCoords({ lat: lat.toFixed(3), lon: lon.toFixed(3) });
+      // look up country name (if geographies loaded)
+      findCountryFromLonLat(lon, lat);
+    }
+  };
+
+  const findCountryFromLonLat = (lon, lat) => {
+    try {
+      if (!geographiesRef.current) {
+        setCountry(null);
+        return;
+      }
+      for (const geo of geographiesRef.current) {
+        // geo is a GeoJSON feature produced by react-simple-maps
+        if (d3.geoContains(geo, [lon, lat])) {
+          const name = geo.properties.ADMIN || geo.properties.name || geo.properties.NAME || geo.properties.NAME_LONG || geo.properties.SOVEREIGNT || null;
+          setCountry(name || null);
+          return;
+        }
+      }
+      setCountry(null);
+    } catch (e) {
+      setCountry(null);
     }
   };
 
@@ -198,8 +222,10 @@ export default function WeatherLensMap() {
           <rect x={0} y={0} width={VB_W} height={VB_H} fill="#111" />
           <g transform={`translate(0, ${panY})`}>
             <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => (
+              {({ geographies }) => {
+                // store geographies for country lookup later
+                geographiesRef.current = geographies;
+                return geographies.map((geo) => (
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
@@ -210,8 +236,8 @@ export default function WeatherLensMap() {
                       hover: { fill: "var(--nasa-muted)", transition: "0.3s" },
                     }}
                   />
-                ))
-              }
+                ));
+              }}
             </Geographies>
             {/* Continent labels (projected). All labels share the `region-label` class so styles live in index.css */}
             {(() => {
@@ -249,11 +275,12 @@ export default function WeatherLensMap() {
         </g>
       </ComposableMap>
 
-      <div className="absolute bottom-3 left-4 text-white text-sm" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', padding: '10px', letterSpacing: '0.15em'}}>
+      {/* bottom-left: coordinate readout (kept small) */}
+      <div className="absolute bottom-3 left-4 text-white text-sm" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '18px', padding: '8px', letterSpacing: '0.08em'}}>
         Lon: {coords.lon || "--"}°E, Lat: {coords.lat || "--"}°N
       </div>
 
-      <div className="absolute bottom-3 right-4 flex items-center gap-3 max-w-[60%]">
+      <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex items-center gap-3 max-w-[80%] z-20">
         {testResp !== "" && (
           <pre className="text-white/90 text-xs bg-black/40 px-3 py-2 rounded-lg whitespace-pre-wrap break-all">
             {testResp}
@@ -263,15 +290,19 @@ export default function WeatherLensMap() {
         <button
           onClick={handleTest}
           disabled={testing}
-          className="disabled:opacity-60 disabled:cursor-not-allowed text-white px-5 py-2 rounded-full font-semibold"
+          className="disabled:opacity-60 disabled:cursor-not-allowed text-white px-5 py-2 rounded-full font-semibold justify-center"
         >
           {testing ? "Testing..." : "Test"}
         </button>
 
-        <button className="text-white px-6 py-2 rounded-full font-semibold">
+        <button className="text-white px-6 py-2 rounded-full font-semibold justify-center">
           Predict
         </button>
+      </div>
 
+      {/* bottom-right: country name determined from current coords */}
+      <div className="absolute bottom-3 right-4 text-white text-sm text-right z-20" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '18px', padding: '8px', letterSpacing: '0.08em'}}>
+        {country ? country : '—'}
       </div>
     </div>
   );
