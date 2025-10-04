@@ -10,3 +10,5 @@ h5py
 netcdf4
 typing
 pydantic
+datetime
+scikit-learn

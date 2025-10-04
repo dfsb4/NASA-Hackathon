@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -6,9 +6,13 @@ from pathlib import Path
 from pydantic import BaseModel
 from typing import List, Literal
 from pydantic import BaseModel, Field
+from datetime import datetime as dt
 import os
 
 from utils.plot import plot_all
+from month.temperature import *
+from month.precipitation import *
+from month.air import *
 
 app = FastAPI(title="My Monorepo API", version="0.1.0")
 
@@ -46,4 +50,49 @@ def plot(body: PlotIn):
     urls = [f"/static{p.replace('\\', '/')}" for p in out_paths]
     return JSONResponse({"month": body.month, "lat": body.lat, "lon": body.lon, "images": urls})
 
+@app.get("/api/weather/month")
+def get_monthly_weather(
+    request: Request,
+    latitude: float,
+    longitude: float,
+    datetime: str,
+):
+    try:
+        iso = datetime.replace("Z", "+00:00")
+        t = dt.fromisoformat(iso)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid datetime. Use ISO 8601, e.g. 2025-10-04T08:00:00Z")
+    month = f"{t.month:02d}"
+
+    temperature = 28.4
+    precipitation = 0.3
+    humidity = 68
+    windspeed = 2.7
+    air_quality = 50
+
+    url_map = {
+        "temperature":   f"/static/temperature/{month}_temperature.png",
+        "precipitation": f"/static/precipitation/{month}_precipitation.png",
+        "humidity":      f"/static/humidity/{month}_humidity.png",
+        "windspeed":     f"/static/windspeed/{month}_windspeed.png",
+        "air_quality":   f"/static/air_quality/{month}_air_quality.png",
+    }
+
+    payload = {
+        "location": {"latitude": latitude, "longitude": longitude},
+        "datetime": datetime,
+        "data": {
+            "temperature":   {"value": round(temperature, 1), "unit": "°C"},
+            "precipitation": {"value": round(precipitation, 2), "unit": "mm/h"},
+            "humidity":      {"value": int(humidity), "unit": "%"},
+            "windspeed":     {"value": round(windspeed, 1), "unit": "m/s"},
+            "air_quality":   {"value": int(air_quality), "unit": "μg/m³"},
+            "url": url_map,
+            "climate_description": (
+                "Warm and humid morning with light southern wind. "
+                "Low chance of extreme weather. Slightly uncomfortable due to humidity."
+            ),
+        },
+    }
+    return JSONResponse(payload)
 # local test: uvicorn main:app --host 0.0.0.0 --port 8000
