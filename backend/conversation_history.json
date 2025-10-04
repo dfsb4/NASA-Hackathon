@@ -1,8 +1,0 @@
-[
-    "User (NASA): launch",
-    "AI (NASA): ### 火箭與發射基礎\n- **軌道需求:** 達成軌道需要垂直上升＋重力轉彎進入水平高超音速。\n- **多級火箭:** 逐級丟棄空重，提升最終速度與酬載效率。\n- **任務類型:** LEO、GTO、深空探測（軌道設計與發射窗影響甚大）。",
-    "User (NASA): intern",
-    "AI (NASA): ### 在 NASA 發展\n- **Internships/Pathways:** 面向 STEM 領域學生的實習與轉正管道。\n- **常見背景:** 航太、機械、電機、資工、資料科學、地球科學等。\n- **作品集建議:** 展示系統整合、模擬分析、資料管線或影像處理專案。",
-    "User (NASA): \n        You are an expert travel agent AI. Plan a trip with the following details:\n\n        Destination: ㄍ\n        Number of Days: 3\n        Travel Date: 2025-10-31\n        Budget: CubeSat Budget\n        Number of Travelers: 5 to 10 people\n        Additional Information: ˇ\n\n        Please provide a detailed itinerary, including daily activities, accommodations, and travel tips.\n    ",
-    "AI (NASA): ### NASA 快速總覽\n- **人類深空探索：** Artemis 計畫重返月球並為火星做準備。\n- **太空望遠鏡：** Hubble（光/UV）與 JWST（紅外）相互補強。\n- **近地任務：** ISS 微重力研究、地球觀測衛星（氣候、災害監測）。\n- **機器人探測：** 火星車、外太陽系探測器（木星/土星系）。\n- 想更精確？告訴我你想知道的**任務/主題關鍵字**（如 *Artemis、JWST、ISS、Mars*）。"
-]
