@@ -3,7 +3,8 @@ import os
 import sys
 import time
 import calendar
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Dict, Union
+import numpy as np
 
 import earthaccess
 from dotenv import load_dotenv
@@ -15,6 +16,8 @@ BBOX       = (-180, -90, 180, 90)  # (min_lon, min_lat, max_lon, max_lat)
 OUT_ROOT   = "../data/precipitation" 
 SLEEP_BETWEEN_CALLS = 0.6  
 
+TEMP_OUT_ROOT = "../data/temperature"
+AIR_OUT_ROOT = "../data/air_quality"
 def month_date_range(year: int, month: int) -> Tuple[str, str]:
     last_day = calendar.monthrange(year, month)[1]
     return (f"{year:04d}-{month:02d}-01", f"{year:04d}-{month:02d}-{last_day:02d}")
@@ -92,6 +95,44 @@ def precipitation():
     print("finished")
 
 # temperature
+def temperature(dataset: str = "merra2_t2m"):
+    load_dotenv()
+    print("🔐 Earthdata login")
+    earthaccess.login(strategy="environment")
 
+    years = list(range(2020, 2025))
+    months = list(range(1, 13))
+    if len(sys.argv) == 4:
+        y0, y1 = int(sys.argv[2]), int(sys.argv[3])
+        years = list(range(y0, y1 + 1))
+
+    if dataset == "merra2_t2m":
+        short_name = "M2TMNXSLV"
+        version = "5.12.4"
+        out_root = TEMP_OUT_ROOT
+        bbox = (-180, -90, 180, 90) 
+    elif dataset == "merra2_aer":
+        short_name = "M2TMNXAER"
+        version = "5.12.4"
+        out_root = AIR_OUT_ROOT
+        bbox = (-180, -90, 180, 90)
+    else:
+        raise ValueError("fail")
+
+    for y in years:
+        for m in months:
+            download_one_month(
+                year=y, month=m,
+                short_name=short_name,
+                version=version,
+                bbox=bbox,
+                out_root=out_root
+            )
+            time.sleep(SLEEP_BETWEEN_CALLS)
+
+    print("temperature download finished")
+    
 if __name__ == "__main__":
     precipitation()
+    temperature("merra2_t2m")
+    temperature("merra2_aer")

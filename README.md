@@ -91,7 +91,7 @@ git clone https://github.com/dfsb4/NASA-Hackathon.git
 
    ```bash
    vicorn main:app --host 0.0.0.0 --port 8000 # For MacOS
-   uvicorn main:app --host 0.0.0.0 --port 8000 --reload # For Windows
+   python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload # For Windows
 
    ```
 
