@@ -7,6 +7,7 @@ import {
   ZoomableGroup,
 } from "react-simple-maps";
 import * as d3 from "d3-geo";
+import PredictModal from './custom/PredictModal'
 
 const geoUrl =
   "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
@@ -27,6 +28,9 @@ export default function WeatherLensMap() {
   const draggingRef = useRef(false);
   const geographiesRef = useRef(null);
   const [country, setCountry] = useState(null);
+  const [predictOpen, setPredictOpen] = useState(false);
+  const pointerDownRef = useRef(null);
+  const [pin, setPin] = useState(null);
 
   // Pointer drag start refs
   const startPointerViewRef = useRef({ x: 0, y: 0 }); // viewBox coords at pointer start
@@ -97,6 +101,8 @@ export default function WeatherLensMap() {
     containerRef.current.setPointerCapture(e.pointerId);
     draggingRef.current = true;
     const v = clientToViewBox(e.clientX, e.clientY);
+    // record raw client down for click detection
+    pointerDownRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
     startPointerViewRef.current = { x: v.x, y: v.y };
     startRotationRef.current = rotationRef.current;
     startPanYRef.current = panYRef.current;
@@ -150,6 +156,34 @@ export default function WeatherLensMap() {
     try {
       containerRef.current.releasePointerCapture(e.pointerId);
     } catch (err) {}
+    // determine if this was a click (small movement and short time)
+    const down = pointerDownRef.current;
+    const up = { x: e.clientX, y: e.clientY, t: Date.now() };
+    let isClick = false;
+    if (down) {
+      const dx = up.x - down.x;
+      const dy = up.y - down.y;
+      const dist = Math.hypot(dx, dy);
+      const dt = up.t - down.t;
+      if (dist < 6 && dt < 300) isClick = true;
+    }
+
+    if (isClick) {
+      // map client -> viewBox -> lon/lat (account for panY)
+      const view = clientToViewBox(e.clientX, e.clientY);
+      const proj = makeProjection(rotationRef.current);
+      const adj = [view.x, view.y - panYRef.current];
+      const inv = proj.invert(adj);
+      if (inv) {
+        const [lon, lat] = inv;
+        // replace existing pin with the new one (only one pin at a time)
+        setPin({ lon, lat });
+        // also update coords and country
+        setCoords({ lat: lat.toFixed(3), lon: lon.toFixed(3) });
+        findCountryFromLonLat(lon, lat);
+      }
+    }
+
     draggingRef.current = false;
     containerRef.current.style.cursor = "grab";
   };
@@ -209,6 +243,8 @@ export default function WeatherLensMap() {
       <h2 className="absolute top-4 left-4 z-20 text-white text-2xl font-semibold bg-black/30 px-3 py-1 rounded pointer-events-none" style={{fontFamily: '"DM Serif Display", serif', fontWeight: '400', fontStyle: 'normal', display: "inline", color: "var(--nasa-muted)", fontSize: "24px", letterSpacing: '0.15em'}}>
         LOCATION
       </h2>
+
+        {/* <ZoomableGroup zoom={1} disablePanning disableZooming> */}
 
       <ComposableMap
         projection={makeProjection(rotationLon)}
@@ -271,9 +307,30 @@ export default function WeatherLensMap() {
                 return null;
               }
             })()}
+            {/* single pin rendered in same transformed group so it moves with the map */}
+            {pin && (() => {
+              try {
+                const proj = makeProjection(rotationLon);
+                const pt = proj([pin.lon, pin.lat]);
+                if (!pt) return null;
+                // center the pin image (assume 28x28)
+                const size = 28;
+                return (
+                  <g key={`pin`} transform={`translate(${pt[0] - size/2}, ${pt[1] - size})`} style={{ pointerEvents: 'none' }}>
+                    <image href="/pin.svg" width={size} height={size} />
+                    <text x={size/2} y={18} textAnchor="middle" fontSize={10} fill="white" style={{ stroke: '#000', strokeWidth: 2, paintOrder: 'stroke' }}>
+                      {`${pin.lon.toFixed(3)}, ${pin.lat.toFixed(3)}`}
+                    </text>
+                  </g>
+                );
+              } catch (e) {
+                return null;
+              }
+            })()}
           </g>
         </g>
       </ComposableMap>
+      {/* </ZoomableGroup> */}
 
       {/* bottom-left: coordinate readout (kept small) */}
       <div className="absolute bottom-3 left-4 text-white text-sm" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '18px', padding: '8px', letterSpacing: '0.08em'}}>
@@ -295,10 +352,23 @@ export default function WeatherLensMap() {
           {testing ? "Testing..." : "Test"}
         </button>
 
-        <button className="text-white px-6 py-2 rounded-full font-semibold justify-center">
+        <button onClick={() => setPredictOpen(true)} className="text-white px-6 py-2 rounded-full font-semibold justify-center">
           Predict
         </button>
       </div>
+
+      {/* Predict modal */}
+      <PredictModal
+        isOpen={predictOpen}
+        onClose={() => setPredictOpen(false)}
+        pin={pin}
+        datetime={(() => {
+          // read the header time if present (Time component puts formatted text in a <time> element)
+          const tEl = document.querySelector('#site-header time')
+          if (tEl && tEl.getAttribute('dateTime')) return tEl.getAttribute('dateTime')
+          return new Date().toISOString()
+        })()}
+      />
 
       {/* bottom-right: country name determined from current coords */}
       <div className="absolute bottom-3 right-4 text-white text-sm text-right z-20" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '18px', padding: '8px', letterSpacing: '0.08em'}}>
