@@ -103,7 +103,7 @@ const GeminiChat = () => {
 
                 {messages.map((msg, index) => (
                   <div key={index} className="mb-6">
-                    <Card className="relative max-w-3xl mx-auto border-[3px] border-gray-300 shadow-sm">
+                    <Card className="relative w-full border-[3px] border-gray-300 shadow-sm">
                       {/* Faux stamp */}
                       <div className="absolute top-3 right-3 w-16 h-16 border-2 border-gray-400 grid place-items-center rotate-6 text-[10px] font-semibold tracking-widest text-gray-500 bg-white">
                         STAMP

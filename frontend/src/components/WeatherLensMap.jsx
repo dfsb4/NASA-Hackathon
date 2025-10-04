@@ -51,7 +51,10 @@ export default function WeatherLensMap() {
       onMouseMove={handleMouseMove}
       className="relative w-full h-[500px] sm:h-[600px] md:h-[700px] bg-gradient-to-r from-gray-700 to-gray-600 rounded-2xl p-4 overflow-hidden"
     >
-      <h2 className="text-white text-2xl mb-2 font-semibold">Location</h2>
+      {/* Overlaid label in the top-left of the map (inside the relative container). */}
+      <h2 className="absolute top-4 left-4 z-20 text-white text-2xl font-semibold bg-black/30 px-3 py-1 rounded pointer-events-none">
+        Location
+      </h2>
 
       <ComposableMap
         projection={projection}

@@ -14,7 +14,7 @@ function Hero() {
     //     </Link>
         
     // </div>
-    <div className="relative mx-4 md:mx-56 mt-10 overflow-hidden rounded-3xl p-10 md:p-16
+    <div className="relative mx-0 w-full px-4 md:px-16 mt-10 overflow-hidden rounded-3xl p-10 md:p-16
       flex flex-col items-center gap-10 text-slate-100
       bg-[radial-gradient(1200px_600px_at_50%_-20%,#1e3a8a_0%,#0b1020_60%,#000000_100%)]
       ring-1 ring-white/10 shadow-2xl">
@@ -51,7 +51,7 @@ function Hero() {
       </h1>
 
       {/* 副標（修正原本的 test-gray-500 → text-gray-400） */}
-      <p className="max-w-3xl text-center text-gray-300/80 text-base md:text-lg leading-relaxed">
+      <p className="w-full text-center text-gray-300/80 text-base md:text-lg leading-relaxed">
         DFSB4DFSB4DFSB4DFSB4DFSB4DFSB4DFSB4DFSB4DFSB4DFSB4DFSB4DFSB4DFSB4DFSB4
       </p>
 

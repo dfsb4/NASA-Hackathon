@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Noto+Serif+TC:wght@200..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,6 +10,11 @@
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+
+  /* Project color tokens */
+  --nasa-emerald: #2d555d; /* 2d555d */
+  --nasa-deep: #034356; /* 034356 */
+  --nasa-muted: #d9d9d9; /* d9d9d9 */
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
@@ -34,7 +41,8 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  /* Allow children to stretch full-width so the layout expands with the browser */
+  align-items: stretch;
   /* justify-content: center; */
   text-align: center;
 }

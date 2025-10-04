@@ -10,6 +10,12 @@ module.exports = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
+			// project named tokens
+			nasa: {
+				'dark-gray-azure': '#2d555d',
+				'dark-blue': '#034356',
+				'muted': '#d9d9d9'
+			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
