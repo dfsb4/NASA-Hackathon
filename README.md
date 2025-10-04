@@ -79,15 +79,20 @@ git clone https://github.com/dfsb4/NASA-Hackathon.git
 4. **Configure Environment Variables:**
 
    - Create a `.env` file in the `backend` directory.
-   - Add your **Gemini API Key**:
+   - Add your **Gemini API Key**
+   - Add your **Earthdata account**
      ```
      GEMINI_API_KEY=your_gemini_api_key_here
+     EARTHDATA_USERNAME=dfsb4
+     EARTHDATA_PASSWORD=Sbjerk4@gmail.com
      ```
 
 5. **Start the Backend Server:**
 
    ```bash
-   vicorn main:app --host 0.0.0.0 --port 8000
+   vicorn main:app --host 0.0.0.0 --port 8000 # For MacOS
+   uvicorn main:app --host 0.0.0.0 --port 8000 --reload # For Windows
+
    ```
 
 6. **Backend Server** will run at:
@@ -159,5 +164,3 @@ git clone https://github.com/dfsb4/NASA-Hackathon.git
 
 This project is licensed under the **MIT License**. Feel free to use and modify it for your own purposes.
 
-
-# NASA-Hackathon

@@ -25,4 +25,7 @@ class EchoIn(BaseModel):
 def echo(body: EchoIn):
     return {"echo": body.message}
 
+@app.post("/api/plot")
+def plot():
+    return {"plot": "This is a placeholder for plot functionality."}
 # local test: vicorn main:app --host 0.0.0.0 --port 8000
