@@ -213,6 +213,38 @@ export default function WeatherLensMap() {
                 ))
               }
             </Geographies>
+            {/* Continent labels (projected). All labels share the `region-label` class so styles live in index.css */}
+            {(() => {
+              try {
+                const proj = makeProjection(rotationLon);
+                const regions = [
+                  { name: 'NORTH AMERICA', lon: -100, lat: 35 },
+                  { name: 'SOUTH AMERICA', lon: -58, lat: -10 },
+                  { name: 'EUROPE', lon: 20, lat: 50 },
+                  { name: 'AFRICA', lon: 27, lat: 0 },
+                  { name: 'ASIA', lon: 90, lat: 46.5 },
+                  { name: 'OCEANIA', lon: 133.5, lat: -28 },
+                ];
+                return regions.map((r) => {
+                  const pt = proj([r.lon, r.lat]);
+                  if (!pt) return null;
+                  return (
+                    <text
+                      key={r.name}
+                      className="region-label"
+                      x={pt[0]}
+                      y={pt[1]}
+                      textAnchor="middle"
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      {r.name}
+                    </text>
+                  );
+                });
+              } catch (e) {
+                return null;
+              }
+            })()}
           </g>
         </g>
       </ComposableMap>

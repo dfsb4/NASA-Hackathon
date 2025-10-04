@@ -69,7 +69,7 @@ button {
   font-weight: 700;
   letter-spacing: 0.1em;
   font-family: "DM Serif Display", serif;
-  background-color: #1a1a1a;
+  background-color: var(--nasa-deep);
   cursor: pointer;
   transition: border-color 0.25s;
   color: var(--nasa-deep);
@@ -157,5 +157,28 @@ button:focus-visible {
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Map region labels (SVG text). Centralized styles so labels can be themed from one place. */
+.region-label {
+  fill: var(--nasa-muted);
+  font-family: "Bitter", serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.15em;
+  text-anchor: middle;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  stroke: #000;
+  stroke-width: 2px;
+  paint-order: stroke;
+}
+
+@media (max-width: 640px) {
+  .region-label {
+    font-size: 12px;
+    stroke-width: 1px;
   }
 }
