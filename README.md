@@ -1,5 +1,5 @@
 # **NASA-Hackathon**
-This project is...
+This project is WeatherLens
 
 ---
 
@@ -9,7 +9,7 @@ This project is...
 NASA-Hackthon/
 │
 ├── backend/                   
-│   ├── app.py                 # Main backend server using FastAPI
+│   ├── main.py                 # Main backend server using FastAPI
 │   ├── requirements.txt       # Python dependencies
 │
 └── frontend/                  # Vite + React Frontend for user interactions
@@ -145,17 +145,6 @@ git clone https://github.com/dfsb4/NASA-Hackathon.git
   - Backend: `pip install -r requirements.txt`
   - Frontend: `npm install`
 - **Port Conflicts:** Ensure no other services are running on port `5000` or `5173`.
-
----
-
-## **Credits**
-
-- **Google Gemini API** for advanced language generation.
-- **ChromaDB** for efficient vector storage and semantic retrieval.
-- **LangChain** for embedding and language model integration.
-- **Vite + React** for frontend development.
-- **Flask** for backend development.
-
 ---
 
 ## **License**
