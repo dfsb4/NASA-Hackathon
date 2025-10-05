@@ -267,6 +267,8 @@ export default function WeatherLensMap() {
                     geography={geo}
                     fill="#444"
                     stroke="#777"
+                    tabIndex={-1}
+                    focusable={false}
                     style={{
                       default: { outline: "none" },
                       hover: { fill: "var(--nasa-muted)", transition: "0.3s" },

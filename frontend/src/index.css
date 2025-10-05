@@ -195,3 +195,12 @@ input[type="date"], input[type="time"] {
   -moz-appearance: textfield;
 }
 
+/* Remove focus outline / tap highlight for SVG map elements (prevent blue/white boxes on click) */
+svg, svg * {
+  -webkit-tap-highlight-color: transparent;
+}
+.rsm-geography, .rsm-geography * {
+  outline: none !important;
+}
+
+
