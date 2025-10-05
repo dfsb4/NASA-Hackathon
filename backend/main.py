@@ -52,6 +52,64 @@ def plot(body: PlotIn):
     urls = [f"/static{p.replace('\\', '/')}" for p in out_paths]
     return JSONResponse({"month": body.month, "lat": body.lat, "lon": body.lon, "images": urls})
 
+
+@app.get("/api/weather")
+def get_weather(
+    request: Request,
+    latitude: float,
+    longitude: float,
+    datetime: str,
+):
+    data = {
+        "location": {
+            "latitude": latitude,
+            "longitude": longitude
+        },
+        "datetime": datetime,
+        "units": "metric",
+        "data": {
+            "temperature": {
+                "value": 28.4,
+                "unit": "°C"
+            },
+            "precipitation": {
+                "value": 0.3,
+                "unit": "mm/h"
+            },
+            "humidity": {
+                "value": 68,
+                "unit": "%"
+            },
+            "windspeed": {
+                "value": 2.7,
+                "unit": "m/s"
+            },
+            "air_quality": {
+                "value": "50 (pm2.5)",
+                "unit": "μg/m³"
+            },
+            "extreme_weather": {
+                "typhoon_probability": 0.02,
+                "heatwave_probability": 0.1,
+                "cold_wave_probability": 0.0,
+                "heavy_rain_probability": 0.08,
+                "strong_wind_probability": 0.05,
+                "thunderstorm_probability": 0.12
+            },
+            "comfort_index": {
+                "very_hot": 0.25,
+                "very_cold": 0.00,
+                "very_windy": 0.05,
+                "very_wet": 0.10,
+                "very_uncomfortable": 0.15
+            },
+            "climate_description": "Warm and humid morning with light southern wind. Low chance of extreme weather. Slightly uncomfortable due to humidity."
+        }
+    }
+
+    return JSONResponse(data)
+
+
 @app.get("/api/weather/month")
 def get_monthly_weather(
     request: Request,
