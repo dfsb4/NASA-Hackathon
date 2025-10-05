@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nasa-hackathon-3dwe.onrender.com'
 
@@ -70,11 +70,13 @@ function simulateModelResults(lat, lon, hours) {
   }
 }
 
-export default function PredictModal({ isOpen, onClose, pin, datetime }) {
+export default function PredictModal({ isOpen, onClose, pin, datetime, onApiError }) {
   const [loading, setLoading] = useState(false)
   const [forecast, setForecast] = useState(null)
   const [error, setError] = useState(null)
   const [model, setModel] = useState(null)
+  const isMountedRef = useRef(true)
+  const timeoutRef = useRef(null)
 
   // helper to map metric keys to units
   const unitForMetric = (k) => {
@@ -94,6 +96,16 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
 
   useEffect(() => {
     if (!isOpen) return
+    // mark mounted
+    isMountedRef.current = true
+    // if no pin is provided, show an error and do not start loading/prediction
+    if (!pin) {
+      setLoading(false)
+      setForecast(null)
+      setModel(null)
+      setError('Please place a pin on the map before predicting.')
+      return
+    }
     setLoading(true)
     setError(null)
     setForecast(null)
@@ -110,8 +122,8 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
         if (datetime) url.searchParams.set('datetime', String(datetime))
         url.searchParams.set('units', 'metric')
 
-        const resp = await fetch(url.toString())
-        if (!resp.ok) throw new Error(`server ${resp.status}`)
+  const resp = await fetch(url.toString())
+  if (!resp.ok) throw new Error(`server ${resp.status}`)
         const json = await resp.json()
 
         // map API response to our forecast + model shapes
@@ -146,16 +158,22 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
         // combine forecast summary and model description into one field
         modelFromApi.description = `${forecastFromApi.summary}${modelFromApi.description ? ' ' + modelFromApi.description : ''}`.trim()
 
+        // clear any previous API error and set successful data
+        if (onApiError) onApiError(null)
         setForecast(forecastFromApi)
         setModel(modelFromApi)
         setLoading(false)
         return
       } catch (e) {
+        // signal API error to parent and continue with fallback
+        if (onApiError) onApiError(String(e))
         // fallback to simulated forecast
         const sim = simulateForecast(lat, lon, datetime)
         const simModel = simulateModelResults(lat, lon, sim.hours)
         // small delay to simulate network
-        setTimeout(() => {
+        // use a ref so we can clear on unmount
+        timeoutRef.current = setTimeout(() => {
+          if (!isMountedRef.current) return
           // merge simulated forecast summary into model description
           simModel.description = `${sim.summary}${simModel.description ? ' ' + simModel.description : ''}`.trim()
           setForecast(sim)
@@ -169,6 +187,18 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
     doFetch()
   }, [isOpen, pin, datetime])
 
+  // track mounted state and cleanup any pending timeouts
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+    }
+  }, [])
+
   if (!isOpen) return null
 
   return (
@@ -181,12 +211,10 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
         </div>
 
         {!pin && (
-          <div className="p-4 bg-red-900 rounded">Please place a pin on the map before predicting.</div>
+          <div className="p-4 bg-red-900 rounded" style={{ fontSize: '24px' }}>Please place a pin on the map before predicting.</div>
         )}
 
-        {loading && <div className="py-8">Loading forecast…</div>}
-
-        {error && <div className="p-3 bg-red-900 rounded">{String(error)}</div>}
+        {loading && <div className="py-8" style={{ fontSize: '24px' }}>Loading forecast…</div>}
 
         {forecast && (
           <div style={{ padding: "8px" }}>
@@ -251,6 +279,8 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
             {/* Export CSV button */}
             <div className="flex justify-end">
               <button
+                disabled={!pin}
+                title={!pin ? 'Place a pin first' : 'Export CSV (tries API first)'}
                 onClick={async () => {
                   const lat = pin?.lat ?? 0
                   const lon = pin?.lon ?? 0
