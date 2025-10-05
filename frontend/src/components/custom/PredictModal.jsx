@@ -76,6 +76,22 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
   const [error, setError] = useState(null)
   const [model, setModel] = useState(null)
 
+  // helper to map metric keys to units
+  const unitForMetric = (k) => {
+    switch (k) {
+      case 'temperature': return '°C'
+      case 'precipitation': return 'mm'
+      case 'humidity': return '%'
+      case 'windspeed': return 'm/s'
+      case 'air_quality': return 'AQI'
+      default: return ''
+    }
+  }
+
+  const prettyProbLabel = (k) => {
+    return k.replace(/_probability$/,'').replace(/_/g,' ')
+  }
+
   useEffect(() => {
     if (!isOpen) return
     setLoading(true)
@@ -136,9 +152,9 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
         {error && <div className="p-3 bg-red-900 rounded">{String(error)}</div>}
 
         {forecast && (
-          <div>
+          <div style={{ padding: "8px" }}>
             <div className="mb-3 flex items-start" style={{ paddingBottom: '12px' }}>
-              <div className="text-sm text-nasa-muted" style={{ fontSize: '24px', paddingRight: '40px', paddingLeft: '6px', textAlign: 'left' }}>
+              <div className="text-sm text-nasa-muted" style={{ fontSize: '24px', paddingRight: '40px',  textAlign: 'left' }}>
                 Location: {pin ? `${Math.abs(pin.lat).toFixed(3)}°${pin.lat >= 0 ? 'N' : 'S'}, ${Math.abs(pin.lon).toFixed(3)}°${pin.lon >= 0 ? 'E' : 'W'}` : '—'}
               </div>
               <div className="text-sm text-nasa-muted" style={{ fontSize: '24px', textAlign: 'left' }}>
@@ -146,15 +162,17 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
               </div>
             </div>
 
-            <div className="mb-4 font-semibold" style={{ fontSize: '20px', textAlign: 'left', paddingLeft: '6px', paddingBottom: '12px', fontWeight: '400' }}> {forecast.summary}</div>
+            <div className="text-sm text-nasa-muted mb-2 font-semibold" style={{ fontSize: '28px', padding: '20px 10px 16px 0px', textAlign: 'left' }}>Summary</div>
+
+            <div className="mb-4 font-semibold" style={{ fontSize: '20px', textAlign: 'left',  paddingBottom: '12px', paddingLeft: '0px', fontWeight: '400' }}> {forecast.summary}</div>
 
             {/* Metrics tiles: temperature, precipitation, humidity, windspeed, air_quality */}
             <div className="grid grid-cols-5 gap-3 mb-4">
               {model?.metrics ? (
                 Object.entries(model.metrics).map(([k,v]) => (
-                  <div key={k} className="p-3 bg-black/20 rounded text-center">
-                    <div className="text-sm text-nasa-muted uppercase">{k.replace('_',' ')}</div>
-                    <div className="text-lg font-bold">{v}</div>
+                  <div key={k} className="p-3 bg-black/20 rounded text-center" style={{ borderRadius: '12px' }}>
+                    <div className="text-sm text-nasa-muted uppercase" style={{ fontSize: '16px', fontFamily: "Bitter", textAlign: 'left', fontWeight: '800', padding: '0px 4px 10px 4px' }}>{k.replace(/_/g,' ')}</div>
+                    <div className="text-lg font-bold" style={{ fontSize: '44px', fontWeight: '900', paddingTop: '16px', paddingBottom:'8px' }}>{v} <span style={{ fontSize: '18px', fontWeight: 600 }}>{unitForMetric(k)}</span></div>
                   </div>
                 ))
               ) : (
@@ -164,10 +182,14 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
 
             {/* Extremes: show only entries with probability > 0.07 */}
             <div className="mb-3">
-              <div className="text-sm text-nasa-muted mb-2 font-semibold" style={{ fontSize: '20px' }}>Notable extreme weather probabilities</div>
+              <div className="text-sm text-nasa-muted mb-2 font-semibold" style={{ fontSize: '28px', padding: '20px 0px 16px 0px', textAlign: 'left' }}>Notable Extreme Weather Probabilities</div>
               <div className="flex gap-3 flex-wrap">
                 {model?.extremes && Object.entries(model.extremes).filter(([k,v]) => v > 0.07).map(([k,v]) => (
-                  <div key={k} className="px-3 py-2 bg-black/20 rounded">{k.replace(/_/g,' ')}: {(v*100).toFixed(0)}%</div>
+                  <div key={k} className="p-3 bg-black/20 rounded text-center" style={{ minWidth: 140 }}>
+                    <div className="text-sm text-nasa-muted uppercase" style={{ fontSize: '16px', fontFamily: "Bitter", textAlign: 'left', fontWeight: '800', padding: '0px 4px 10px 4px' }}>{prettyProbLabel(k)}</div>
+                    {/* <div className="text-xl font-bold">{Math.round(v*100)}<span className="text-sm">%</span></div> */}
+                    <div className="text-lg font-bold" style={{ fontSize: '32px', fontWeight: '900', paddingTop: '8px', paddingBottom:'8px' }}>{Math.round(v*100)}<span className="text-sm" style={{ fontSize: '18px', fontWeight: 600, paddingLeft: '10px' }}>%</span></div>
+                  </div>
                 ))}
                 {(!model?.extremes || Object.entries(model.extremes || {}).filter(([k,v]) => v > 0.07).length === 0) && (
                   <div className="text-sm text-nasa-muted">No high-probability extremes detected.</div>
@@ -177,10 +199,13 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
 
             {/* Comfort */}
             <div className="mb-3">
-              <div className="text-sm text-nasa-muted mb-2 font-semibold" style={{ fontSize: '20px' }}>Comfort concerns</div>
+              <div className="text-sm text-nasa-muted mb-2 font-semibold" style={{ fontSize: '28px', padding: '20px 0px 16px 0px', textAlign: 'left' }}>Comfort Concerns</div>
               <div className="flex gap-3 flex-wrap">
                 {model?.comfort && Object.entries(model.comfort).filter(([k,v]) => v > 0.07).map(([k,v]) => (
-                  <div key={k} className="px-3 py-2 bg-black/20 rounded">{k.replace(/_/g,' ')}: {(v*100).toFixed(0)}%</div>
+                  <div key={k} className="p-3 bg-black/20 rounded text-center" style={{ minWidth: 140 }}>
+                    <div className="text-sm text-nasa-muted uppercase" style={{ fontSize: '16px', fontFamily: "Bitter", textAlign: 'left', fontWeight: '800', padding: '0px 4px 10px 4px' }}>{k.replace(/_/g,' ')}</div>
+                    <div className="text-xl font-bold">{Math.round(v*100)}<span className="text-sm">%</span></div>
+                  </div>
                 ))}
                 {(!model?.comfort || Object.entries(model.comfort || {}).filter(([k,v]) => v > 0.07).length === 0) && (
                   <div className="text-sm text-nasa-muted">No major comfort concerns.</div>

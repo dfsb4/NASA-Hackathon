@@ -360,11 +360,7 @@ export default function WeatherLensMap() {
       <div className="w-full absolute bottom-0 left-0 p-3 shadow-sm flex flex-col items-center px-5 bg-nasa-dark-gray-azure/90 ring-1 ring-white/10 text-white gap-4">
         {/* Coordinate readout */}
         <div className="text-sm absolute bottom-5 left-5" style={{ fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', letterSpacing: '0.08em' }}>
-<<<<<<< HEAD
-          Lon: {coords.lon || "--"}°E, Lat: {coords.lat || "--"}°N
-=======
          {fmtLon(coords.lon)} , {fmtLat(coords.lat)}
->>>>>>> c10cf997e168afec6fedabcdf7a7d370b84024da
         </div>
 
 
