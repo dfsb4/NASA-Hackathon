@@ -80,7 +80,9 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
 
         {forecast && (
           <div>
-            <div className="mb-3 text-sm text-nasa-muted" style={{ fontSize: '20px', flex: 1 }}>Location: {pin ? `${pin.lat.toFixed(3)}, ${pin.lon.toFixed(3)}` : '—'}</div>
+            <div className="mb-3 text-sm text-nasa-muted" style={{ fontSize: '20px', flex: 1 }}>
+              Location: {pin ? `${Math.abs(pin.lat).toFixed(3)}°${pin.lat >= 0 ? 'N' : 'S'}, ${Math.abs(pin.lon).toFixed(3)}°${pin.lon >= 0 ? 'E' : 'W'}` : '—'}
+            </div>
             <div className="mb-6 font-semibold">Summary: {forecast.summary} — total {forecast.total} mm</div>
 
             <div className="w-full h-36 bg-black/20 rounded p-3 flex items-end gap-2">
