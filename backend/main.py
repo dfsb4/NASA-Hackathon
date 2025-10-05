@@ -49,7 +49,7 @@ class PlotIn(BaseModel):
 @app.post("/api/plot")
 def plot(body: PlotIn):
     out_paths = plot_all(body.month, body.lat, body.lon)
-    urls = [f"/static{p.replace('\\', '/')}" for p in out_paths]
+    urls = [f"/static{Path(p).as_posix()}" for p in out_paths]
     return JSONResponse({"month": body.month, "lat": body.lat, "lon": body.lon, "images": urls})
 
 
