@@ -231,20 +231,20 @@ export default function WeatherLensMap() {
   };
 
   return (
+    <div>
     <div
       ref={containerRef}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      className="relative w-full to-gray-600 rounded-2xl p-0 overflow-hidden"
-      style={{ touchAction: "none", height: containerHeightPx ? `${containerHeightPx}px` : '80vh' }}
+      className={`relative to-gray-600 rounded-2xl p-0 overflow-hidden ${predictOpen ? 'pointer-events-none' : ''}`}
+      style={{ touchAction: "none", height: containerHeightPx ? `${containerHeightPx}px` : '80vh', width: '100vw' }}
     >
       {/* Overlaid label in the top-left of the map (inside the relative container). */}
       <h2 className="absolute top-4 left-4 z-20 text-white text-2xl font-semibold bg-black/30 px-3 py-1 rounded pointer-events-none" style={{fontFamily: '"DM Serif Display", serif', fontWeight: '400', fontStyle: 'normal', display: "inline", color: "var(--nasa-muted)", fontSize: "24px", letterSpacing: '0.15em'}}>
         LOCATION
       </h2>
 
-        {/* <ZoomableGroup zoom={1} disablePanning disableZooming> */}
 
       <ComposableMap
         projection={makeProjection(rotationLon)}
@@ -317,8 +317,8 @@ export default function WeatherLensMap() {
                 const size = 28;
                 return (
                   <g key={`pin`} transform={`translate(${pt[0] - size/2}, ${pt[1] - size})`} style={{ pointerEvents: 'none' }}>
-                    <image href="/pin.svg" width={size} height={size} />
-                    <text x={size/2} y={18} textAnchor="middle" fontSize={10} fill="white" style={{ stroke: '#000', strokeWidth: 2, paintOrder: 'stroke' }}>
+                    <image href="/pin.png" width={size} height={size} style={{ filter: 'brightness(1)' }} />
+                    <text x={size/2} y={18} textAnchor="middle" fontSize={10} fill="white" style={{ color: '#777', fontFamily: '"Bitter", serif', fontWeight: 700 }}>
                       {`${pin.lon.toFixed(3)}, ${pin.lat.toFixed(3)}`}
                     </text>
                   </g>
@@ -331,48 +331,51 @@ export default function WeatherLensMap() {
         </g>
       </ComposableMap>
       {/* </ZoomableGroup> */}
-
-      {/* bottom-left: coordinate readout (kept small) */}
-      <div className="absolute bottom-3 left-4 text-white text-sm" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '18px', padding: '8px', letterSpacing: '0.08em'}}>
-        Lon: {coords.lon || "--"}°E, Lat: {coords.lat || "--"}°N
       </div>
 
-      <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex items-center gap-3 max-w-[80%] z-20">
-        {testResp !== "" && (
-          <pre className="text-white/90 text-xs bg-black/40 px-3 py-2 rounded-lg whitespace-pre-wrap break-all">
-            {testResp}
-          </pre>
-        )}
+      {/* Footer block */}
+      <div className="w-full absolute bottom-0 left-0 bg-gray-800 text-white py-4 px-6 flex flex-col items-center gap-4" style={{ backgroundColor: 'var(--nasa-emerald)' }}>
+        {/* Coordinate readout */}
+        <div className="text-sm absolute bottom-3 left-4" style={{ fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '18px', letterSpacing: '0.08em' }}>
+          Lon: {coords.lon || "--"}°E, Lat: {coords.lat || "--"}°N
+        </div>
 
-        <button
-          onClick={handleTest}
-          disabled={testing}
-          className="disabled:opacity-60 disabled:cursor-not-allowed text-white px-5 py-2 rounded-full font-semibold justify-center"
-        >
-          {testing ? "Testing..." : "Test"}
-        </button>
 
-        <button onClick={() => setPredictOpen(true)} className="text-white px-6 py-2 rounded-full font-semibold justify-center">
-          Predict
-        </button>
-      </div>
+        {/* Buttons */}
+        <div className="flex items-center gap-3">
+          {testResp !== "" && (
+            <pre className="text-white/90 text-xs px-3 py-2 rounded-lg whitespace-pre-wrap break-all">
+              {testResp}
+            </pre>
+          )}
 
-      {/* Predict modal */}
-      <PredictModal
-        isOpen={predictOpen}
-        onClose={() => setPredictOpen(false)}
-        pin={pin}
-        datetime={(() => {
-          // read the header time if present (Time component puts formatted text in a <time> element)
-          const tEl = document.querySelector('#site-header time')
-          if (tEl && tEl.getAttribute('dateTime')) return tEl.getAttribute('dateTime')
-          return new Date().toISOString()
-        })()}
-      />
+          <button
+          style={{ backgroundColor: 'var(--nasa-dark)' }}
+            onClick={() => setPredictOpen(true)}
+            className="text-white px-6 py-3 rounded-full font-semibold justify-center"
+          >
+            Predict
+          </button>
+        </div>
 
-      {/* bottom-right: country name determined from current coords */}
-      <div className="absolute bottom-3 right-4 text-white text-sm text-right z-20" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '18px', padding: '8px', letterSpacing: '0.08em'}}>
-        {country ? country : '—'}
+        {/* Predict modal */}
+        <PredictModal
+          isOpen={predictOpen}
+          onClose={() => setPredictOpen(false)}
+          pin={pin}
+          datetime={(() => {
+            const tEl = document.querySelector('#site-header time');
+            if (tEl && tEl.getAttribute('dateTime')) return tEl.getAttribute('dateTime');
+            return new Date().toISOString();
+          })()}
+        />
+      
+
+        {/* bottom-right: country name determined from current coords */}
+        <div className="absolute bottom-3 right-4 text-white text-sm text-right z-20" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '18px', padding: '8px', letterSpacing: '0.08em'}}>
+            {country ? country : '—'}
+        </div>
+
       </div>
     </div>
   );

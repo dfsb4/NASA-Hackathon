@@ -62,14 +62,12 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div onClick={onClose} className="absolute inset-0 bg-black/60"></div>
       <div className="relative w-11/12 max-w-3xl bg-[#071122] rounded-2xl p-6 text-white" style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.6)' }}>
         <div className="flex items-center justify-between mb-4">
           <div className="text-lg font-semibold">Predict Weather</div>
-          <div className="flex items-center gap-2">
-            <button onClick={onClose} className="text-sm text-nasa-muted px-3 py-1 rounded">Close</button>
-          </div>
+          <button onClick={onClose} className="text-sm text-nasa-muted px-3 py-1 rounded">Close</button>
         </div>
 
         {!pin && (
