@@ -11,6 +11,12 @@ backend/utils/__pycache__/
 backend/month/__pycache__/
 backend/venv/
 
+backend/data/air_quality/*
+backend/data/temperature/2020
+backend/data/temperature/2021
+backend/data/temp_daily/
+backend/day/__pycache__
+
 *.log
 
 .vite/

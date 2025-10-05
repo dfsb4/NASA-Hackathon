@@ -1,19 +1,22 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Query, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from pydantic import BaseModel
-from typing import List, Literal
+from typing import List, Literal,Dict
 from pydantic import BaseModel, Field
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta
 import os
 import io
+import numpy as np
+import json
 
 from utils.plot import plot_all
 from month.precipitation import pred_precipitation
 from month.temperature import pred
 from month.air import pred_air_quality
+from day.daily import run_climate_forecast
 from utils.generate_csv import generate_monthly_csv
 
 app = FastAPI(title="My Monorepo API", version="0.1.0")
@@ -53,61 +56,77 @@ def plot(body: PlotIn):
     return JSONResponse({"month": body.month, "lat": body.lat, "lon": body.lon, "images": urls})
 
 
+def _to_ymd(s: str) -> str:
+    """接受 'YYYY-MM-DD' 或 ISO8601（含 'T'），回傳 'YYYY-MM-DD'。"""
+    if not isinstance(s, str) or len(s) < 10:
+        raise HTTPException(status_code=400, detail="startdate/enddate must be 'YYYY-MM-DD' or ISO8601 string")
+    return s[:10]
+
+def _parse_date(s: str) -> dt:
+    try:
+        return dt.strptime(_to_ymd(s), "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid date format: {s}. Expect 'YYYY-MM-DD' or ISO8601.")
+
+def _nn(x):
+    """NaN -> None，其他轉 float。"""
+    try:
+        x = float(x)
+        return None if np.isnan(x) else round(x, 2)
+    except Exception:
+        return None
+    
 @app.get("/api/weather")
 def get_weather(
     request: Request,
     latitude: float,
     longitude: float,
-    datetime: str,
+    datetime: str,  
 ):
-    data = {
-        "location": {
-            "latitude": latitude,
-            "longitude": longitude
+    s = _to_ymd(datetime)
+    sd = _parse_date(s)
+
+    ed = sd + timedelta(days=3)
+    e = ed.strftime("%Y-%m-%d")
+    try:
+        result_json = run_climate_forecast(latitude, longitude, s, e)
+        result = json.loads(result_json)
+    except SystemExit as ex:
+        raise HTTPException(status_code=422, detail=f"No data available: {ex}")
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f"Forecast failed: {ex}")
+
+    # 3) 組裝回傳
+    summary = result.get("summary", {}) or {}
+    summary_avg = summary.get("average_conditions", {}) or {}
+    probs = summary.get("extreme_event_probabilities", {}) or {}
+    first_day = (result.get("daily_reports") or [{}])[0]
+
+    data_block = {
+        "temperature":   {"value": _nn(summary_avg.get("temp")),   "unit": "°C"},
+        "precipitation": {"value": _nn(summary_avg.get("rain")),   "unit": "mm/day"},
+        "humidity":      {"value": _nn(summary_avg.get("humidity")),"unit": "g/kg"},
+        "windspeed":     {"value": _nn(summary_avg.get("wind")),   "unit": "m/s"},
+        "air_quality":   {"value": _nn(summary_avg.get("pm25")),   "unit": "μg/m³"},
+        "extreme_weather": {
+            # 從 % 轉成 0~1 機率
+            "typhoon_probability":      round(float(probs.get("typhoon_probability", 0))/100.0, 3),
+            "heatwave_probability":     round(float(probs.get("heatwave_probability", 0))/100.0, 3),
+            "cold_wave_probability":    round(float(probs.get("cold_wave_probability", 0))/100.0, 3),
+            "heavy_rain_probability":   round(float(probs.get("heavy_rain_probability", 0))/100.0, 3),
+            "strong_wind_probability":  round(float(probs.get("strong_wind_probability", 0))/100.0, 3),
+            "thunderstorm_probability": round(float(probs.get("thunderstorm_probability", 0))/100.0, 3),
         },
-        "datetime": datetime,
-        "units": "metric",
-        "data": {
-            "temperature": {
-                "value": 28.4,
-                "unit": "°C"
-            },
-            "precipitation": {
-                "value": 0.3,
-                "unit": "mm/h"
-            },
-            "humidity": {
-                "value": 68,
-                "unit": "%"
-            },
-            "windspeed": {
-                "value": 2.7,
-                "unit": "m/s"
-            },
-            "air_quality": {
-                "value": "50 (pm2.5)",
-                "unit": "μg/m³"
-            },
-            "extreme_weather": {
-                "typhoon_probability": 0.02,
-                "heatwave_probability": 0.1,
-                "cold_wave_probability": 0.0,
-                "heavy_rain_probability": 0.08,
-                "strong_wind_probability": 0.05,
-                "thunderstorm_probability": 0.12
-            },
-            "comfort_index": {
-                "very_hot": 0.25,
-                "very_cold": 0.00,
-                "very_windy": 0.05,
-                "very_wet": 0.10,
-                "very_uncomfortable": 0.15
-            },
-            "climate_description": "Warm and humid morning with light southern wind. Low chance of extreme weather. Slightly uncomfortable due to humidity."
-        }
+        "comfort_index": first_day.get("comfort_index"),
+        "climate_description": first_day.get("climate_description"),
     }
 
-    return JSONResponse(data)
+    payload = {
+        "location": {"latitude": latitude, "longitude": longitude},
+        "datetime": s,  
+        "data": data_block,
+    }
+    return JSONResponse(payload)
 
 
 @app.get("/api/weather/month")
@@ -115,10 +134,11 @@ def get_monthly_weather(
     request: Request,
     latitude: float,
     longitude: float,
-    datetime: str,
+    starttime: str,
+    endtime: str,
 ):
     try:
-        iso = datetime.replace("Z", "+00:00")
+        iso = starttime.replace("Z", "+00:00")
         t = dt.fromisoformat(iso)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid datetime. Use ISO 8601, e.g. 2025-10-04T08:00:00Z")
@@ -141,14 +161,15 @@ def get_monthly_weather(
 
     payload = {
         "location": {"latitude": latitude, "longitude": longitude},
-        "datetime": datetime,
+        "starttime": starttime,
+        "endtime": endtime,
         "data": {
             "temperature":   {"value": round(temperature, 1), "unit": "°C"},
             "precipitation": {"value": round(precipitation, 2), "unit": "mm/h"},
             "humidity":      {"value": int(humidity), "unit": "%"},
             "windspeed":     {"value": round(windspeed, 1), "unit": "m/s"},
             "air_quality":   {"value": int(air_quality), "unit": "μg/m³"},
-            "url": url_map,
+            "images": {k: v for k, v in url_map.items()},
             "climate_description": (
                 description[0] + " " + description[1] + " " + description[2]
             ),
