@@ -163,24 +163,25 @@ button:focus-visible {
 
 /* Map region labels (SVG text). Centralized styles so labels can be themed from one place. */
 .region-label {
-  fill: var(--nasa-muted);
+  fill: #242424;
   font-family: "Bitter", serif;
-  font-weight: 700;
+  font-weight: 900;
   font-size: 18px;
   letter-spacing: 0.15em;
   text-anchor: middle;
   pointer-events: none;
   -webkit-user-select: none;
   user-select: none;
-  stroke: #000;
-  stroke-width: 2px;
-  paint-order: stroke;
+  /* stroke: #000; */
+  /* stroke-width: 2px; */
+  color: var(--nasa-emerald);
+  paint-order: fill;
 }
 
 @media (max-width: 640px) {
   .region-label {
     font-size: 12px;
-    stroke-width: 1px;
+    /* stroke-width: 1px; */
   }
 }
 

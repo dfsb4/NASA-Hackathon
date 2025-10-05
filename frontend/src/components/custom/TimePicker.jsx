@@ -43,9 +43,9 @@ export default function TimePicker({ isOpen, onClose, onSet, initialISO }) {
       <div className="relative w-9/12 rounded-2xl p-6" style={{boxShadow: '0 8px 40px rgba(2,6,23,0.8)', backgroundColor: 'var(--nasa-deep)'}}>
         <div className="flex items-center justify-between mb-4">
           {/* <button onClick={onClose} className="text-nasa-muted px-3 py-2">Cancel</button> */}
-          <button onClick={onClose} className="text-sm text-nasa-dark px-3 py-2 rounded" style={{ fontSize: '24px' }}>Cancel</button>
-          <div className="text-white text-xl font-semibold" style={{fontSize: '32px', paddingTop: '8px', paddingBottom: '20px'}}>Select date & time</div>
-          <button onClick={handleSet} className="text-sm text-nasa-dark px-3 py-2 rounded" style={{ fontSize: '24px' }}>Set</button>
+          <button onClick={onClose} className="text-sm text-nasa-dark px-3 py-3 rounded" style={{ fontSize: '24px', marginTop: '0px' }}>Cancel</button>
+          <div className="text-white text-xl font-semibold" style={{fontSize: '32px', paddingTop: '5px', paddingBottom: '20px'}}>Select date & time</div>
+          <button onClick={handleSet} className="text-sm text-nasa-dark px-3 py-3 rounded" style={{ fontSize: '24px', marginTop: '0px' }}>Set</button>
           {/* <button onClick={handleSet} className="text-nasa-muted px-3 py-2">Set</button> */}
         </div>
 

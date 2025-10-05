@@ -273,9 +273,9 @@ export default function WeatherLensMap() {
         <g>
           <defs>
             <linearGradient id="mapBg" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#6e6e6eff" />
-              <stop offset="50%" stopColor="#454848ff" />
-              <stop offset="100%" stopColor="#2f3638ff" />
+              <stop offset="0%" stopColor="#cbc8c8ff" />
+              <stop offset="50%" stopColor="#cbc8c8ff" />
+              <stop offset="100%" stopColor="#cbc8c8ff" />
             </linearGradient>
           </defs>
           <rect x={0} y={0} width={VB_W} height={VB_H} fill="url(#mapBg)" />
@@ -288,10 +288,10 @@ export default function WeatherLensMap() {
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
-                    fill="#444"
-                    stroke="#777"
+                    fill="#f1efefff"
+                    stroke="#939292ff"
                     tabIndex={-1}
-                    focusable={false}
+                    focusable={false} 
                     style={{
                       default: { outline: "none" },
                       hover: { fill: "var(--nasa-muted)", transition: "0.3s" },
@@ -322,7 +322,7 @@ export default function WeatherLensMap() {
                       x={pt[0]}
                       y={pt[1]}
                       textAnchor="middle"
-                      style={{ pointerEvents: 'none' }}
+                      style={{ pointerEvents: 'none', fill: 'var(--nasa-emerald)' }}
                     >
                       {r.name}
                     </text>
@@ -344,12 +344,12 @@ export default function WeatherLensMap() {
                   <g key={`pin`} transform={`translate(${pt[0] - size/2}, ${pt[1] - size})`} style={{ pointerEvents: 'none' }}>
                     {/* Inline pin SVG so we can style the fill using CSS variables (supports --nasa--emulate with fallback) */}
                     <svg width={size} height={size} viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" style={{ overflow: 'visible' }}>
-                      <path d="M14 0C9.029 0 5 4.03 5 9.01 5 16.01 14 28 14 28s9-11.99 9-18.99C23 4.03 18.971 0 14 0z" fill="var(--nasa-azure)" />
+                      <path d="M14 0C9.029 0 5 4.03 5 9.01 5 16.01 14 28 14 28s9-11.99 9-18.99C23 4.03 18.971 0 14 0z" fill="var(--nasa-emerald)" />
                       <circle cx="14" cy="9" r="3.5" fill="white" />
                     </svg>
 
                     {/* place label below the pin SVG (size + offset) and use CSS token for color */}
-                    <text x={size / 2} y={size + 12} textAnchor="middle" fontSize={10} fill="var(--nasa-muted)" style={{ fontFamily: '"Bitter", serif', fontWeight: 700 }}>
+                    <text x={size / 2} y={size + 12} textAnchor="middle" fontSize={10} fill="var(--nasa-deep)" style={{ fontFamily: '"Bitter", serif', fontWeight: 700 }}>
                       {`${fmtLon(pin.lon)} , ${fmtLat(pin.lat)}`}
                     </text>
                   </g>
