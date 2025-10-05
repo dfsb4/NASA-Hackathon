@@ -42,6 +42,9 @@ export default function WeatherLensMap() {
   const startRotationRef = useRef(0);
   const startPanYRef = useRef(0);
 
+  const [showMethod, setShowMethod] = useState(false);
+
+
   // Map intrinsic viewBox size (matches ComposableMap width/height)
   const VB_W = 800;
   const VB_H = 600;
@@ -453,9 +456,64 @@ setPanY(newPan);
     }
   }
 
+  useEffect(() => {
+    const header = document.getElementById("site-header");
+    if (!header) return;
+
+    const timeEl = header.querySelector("time");
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "Method";
+    btn.style.marginRight = "12px";
+    // 直接用 Tailwind 類別
+    btn.className =
+      "px-3 py-1 rounded-full font-semibold text-white bg-[var(--nasa-emerald)] hover:opacity-90 transition";
+
+    btn.onclick = () => setShowMethod((v) => !v);
+
+    if (timeEl && timeEl.parentNode) {
+      timeEl.parentNode.insertBefore(btn, timeEl);
+    } else {
+      header.appendChild(btn);
+    }
+
+    return () => {
+      btn.remove();
+    };
+  }, []);
+
 
   return (
     <div>
+
+      {showMethod && (
+        <div
+          className="fixed top-20 right-6 z-50 max-w-xl rounded-2xl shadow-xl ring-1 ring-black/10 text-white"
+          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
+        >
+          <div className="p-5">
+            <div className="flex items-start justify-between gap-4">
+              <h3 className="text-lg font-bold tracking-wide">Methodology</h3>
+              <button
+                onClick={() => setShowMethod(false)}
+                className="px-2 py-1 rounded text-sm bg-white/10 hover:bg-white/20"
+              >
+                Close
+              </button>
+            </div>
+            <p className="mt-3 leading-relaxed text-sm text-white/90">
+              The weather prediction method in this study combines long-term
+              climatological baselines with recent daily variation trends (anomaly
+              nudging) to capture both long-term climate averages and short-term
+              weather fluctuations. By integrating machine learning (Random Forest)
+              with climate anomaly correction, the model efficiently forecasts
+              meteorological trends and assesses the risk of extreme weather events
+              for specific future periods.
+            </p>
+          </div>
+        </div>
+      )}
       <div
         ref={containerRef}
         onPointerDown={onPointerDown}
@@ -651,8 +709,8 @@ setPanY(newPan);
             value={searchQ}
             onChange={(e) => setSearchQ(e.target.value)}
             onKeyDown={onSearchKeyDown}
-            placeholder="Search: 地名 或 經緯度（例：台北101 / 25.033,121.565 / N25.033 E121.565）"
-            className="px-3 py-2 rounded-full text-black text-sm w-[40rem]"
+            placeholder="Search: place or coordinates (e.g., Taipei 101 / 25.033,121.565 / N25.033 E121.565)"
+            className="px-3 py-2 rounded-full text-black text-sm w-64"
             style={{ background: "white" }}
             disabled={searching}
           />
