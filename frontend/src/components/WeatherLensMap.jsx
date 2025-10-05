@@ -33,6 +33,10 @@ export default function WeatherLensMap() {
   const [pin, setPin] = useState(null);
   const [zoom, setZoom] = useState(1);
 
+  // Search state (query + loading)
+  const [searchQ, setSearchQ] = useState("");
+  const [searching, setSearching] = useState(false);
+
   // Pointer drag start refs
   const startPointerViewRef = useRef({ x: 0, y: 0 }); // viewBox coords at pointer start
   const startRotationRef = useRef(0);
@@ -269,6 +273,187 @@ setPanY(newPan);
     }
   };
 
+  // Minimal Nominatim forward geocoding (OpenStreetMap)
+  async function geocodeNominatim(query) {
+    const url = new URL("https://nominatim.openstreetmap.org/search");
+    url.searchParams.set("q", query);
+    url.searchParams.set("format", "json");
+    url.searchParams.set("limit", "1");
+    url.searchParams.set("addressdetails", "0");
+    url.searchParams.set("accept-language", "zh-TW"); // 讓回傳偏中文
+
+    const res = await fetch(url.toString(), { method: "GET" });
+    if (!res.ok) throw new Error("Nominatim HTTP error " + res.status);
+    const arr = await res.json();
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+
+    const first = arr[0];
+    return {
+      lat: parseFloat(first.lat),
+      lon: parseFloat(first.lon),
+      name: first.display_name,
+    };
+  }
+
+  const handleSearch = async () => {
+    const q = searchQ.trim();
+    if (!q) return;
+    setSearching(true);
+    setApiError(null);
+    try {
+      // 先試著把輸入解析成經緯度
+      const parsed = parseLatLon(q);
+      if (parsed) {
+        const { lat, lon } = parsed;
+        setPin({ lon, lat });
+        setCoords({ lat, lon });
+        findCountryFromLonLat(lon, lat);
+
+        // （可選）視角置中：讓該經度到中線，並把該點移到視窗中央
+        const newRot = -lon;
+        rotationRef.current = newRot;
+        setRotationLon(newRot);
+        const proj = makeProjection(newRot);
+        const pt = proj([lon, lat]);
+        if (pt) {
+          const deltaY = (VB_H / 2) - pt[1];
+          panYRef.current = panYRef.current + deltaY;
+          setPanY(panYRef.current);
+        }
+        return; // 解析成功就不去打 OSM 了
+      }
+
+      // 經緯度解析失敗 -> 改用 Nominatim 關鍵字搜尋
+      const r = await geocodeNominatim(q);
+      if (!r) {
+        setApiError("No result for that location");
+        return;
+      }
+      setPin({ lon: r.lon, lat: r.lat });
+      setCoords({ lat: r.lat, lon: r.lon });
+      findCountryFromLonLat(r.lon, r.lat);
+
+      const newRot = -r.lon;
+      rotationRef.current = newRot;
+      setRotationLon(newRot);
+      const proj = makeProjection(newRot);
+      const pt = proj([r.lon, r.lat]);
+      if (pt) {
+        const deltaY = (VB_H / 2) - pt[1];
+        panYRef.current = panYRef.current + deltaY;
+        setPanY(panYRef.current);
+      }
+    } catch (e) {
+      setApiError("Geocode error: " + e.message);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+
+  // Enter 直接搜尋
+  const onSearchKeyDown = (e) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
+
+  // 支援的格式（大小寫皆可、空白/逗號可混用）：
+  // "25.033, 121.565"、"121.565 25.033"、"N25.033 E121.565"、"25.033N, 121.565E"
+  // "lat=25.033 lon=121.565"、"經度121.565 緯度25.033"（只要抓到數字與NSEW就行）
+  // 也接受中文全形逗號（，）
+  function parseLatLon(raw) {
+    if (!raw) return null;
+    let s = String(raw).trim();
+    s = s.replace(/，/g, ","); // 全形逗號 -> 半形
+    // 移除多餘字元，保留數字/小數點/符號/字母NSEW與分隔
+    // 只是為了好切割，不是嚴格清洗
+    const cleaned = s.replace(/[^\d\.\-\+\s,°NSEWnsew]/g, " ");
+
+    // 1) 嘗試 label 風格（lat=.. lon=..）
+    const latLabel = /lat(?:itude)?\s*[:=]?\s*([+\-]?\d+(?:\.\d+)?)/i.exec(cleaned);
+    const lonLabel = /lon(?:gitude)?\s*[:=]?\s*([+\-]?\d+(?:\.\d+)?)/i.exec(cleaned);
+    if (latLabel && lonLabel) {
+      const lat = parseFloat(latLabel[1]);
+      const lon = parseFloat(lonLabel[1]);
+      if (Number.isFinite(lat) && Number.isFinite(lon) && inRange(lat, lon)) {
+        return { lat, lon };
+      }
+    }
+
+    // 2) 抓出帶 NSEW 的兩個數
+    // 形式如："25.033N 121.565E" 或 "N25.033, E121.565"
+    const tokenRe = /([NnSsEeWw])?\s*([+\-]?\d+(?:\.\d+)?)\s*([NnSsEeWw])?/g;
+    let tokens = [];
+    let m;
+    while ((m = tokenRe.exec(cleaned))) {
+      const val = parseFloat(m[2]);
+      if (!Number.isFinite(val)) continue;
+      const prefix = m[1] || "";
+      const suffix = m[3] || "";
+      const dir = (prefix + suffix).toUpperCase(); // 可能是 "N"、"S"、"E"、"W" 或 ""
+      tokens.push({ val, dir });
+    }
+    if (tokens.length >= 2) {
+      const a = tokens[0], b = tokens[1];
+      // 如果其中一個包含 N/S -> 當作緯度；另一個包含 E/W -> 當作經度
+      const hasNS = (t) => /[NS]/.test(t.dir);
+      const hasEW = (t) => /[EW]/.test(t.dir);
+      let lat, lon;
+
+      if (hasNS(a) && hasEW(b)) {
+        lat = a.val * (a.dir === "S" ? -1 : 1);
+        lon = b.val * (b.dir === "W" ? -1 : 1);
+      } else if (hasNS(b) && hasEW(a)) {
+        lat = b.val * (b.dir === "S" ? -1 : 1);
+        lon = a.val * (a.dir === "W" ? -1 : 1);
+      } else if (hasNS(a) || hasNS(b)) {
+        // 只有一個有 NS，另一個沒標，則無標者視為經度（常見：25N 121.5）
+        const tLat = hasNS(a) ? a : b;
+        const tLon = hasNS(a) ? b : a;
+        lat = tLat.val * (tLat.dir === "S" ? -1 : 1);
+        lon = tLon.val; // 未指定方向，保留正負號
+      } else if (hasEW(a) || hasEW(b)) {
+        // 只有一個有 EW，另一個視為緯度
+        const tLon = hasEW(a) ? a : b;
+        const tLat = hasEW(a) ? b : a;
+        lat = tLat.val;
+        lon = tLon.val * (tLon.dir === "W" ? -1 : 1);
+      } else {
+        // 都沒有方向：用「常見順序」猜測：第一個為緯度(-90..90)，第二個為經度(-180..180)
+        // 若第一個不在緯度範圍、第二個在，則互換
+        let v1 = a.val, v2 = b.val;
+        if (Math.abs(v1) <= 90 && Math.abs(v2) <= 180) {
+          lat = v1; lon = v2;
+        } else if (Math.abs(v2) <= 90 && Math.abs(v1) <= 180) {
+          lat = v2; lon = v1;
+        }
+      }
+
+      if (Number.isFinite(lat) && Number.isFinite(lon) && inRange(lat, lon)) {
+        return { lat, lon };
+      }
+    }
+
+    // 3) 簡單逗號/空白分隔兩數（不帶方向）
+    const parts = cleaned.split(/[,\s]+/).filter(Boolean);
+    if (parts.length >= 2) {
+      const a = parseFloat(parts[0]);
+      const b = parseFloat(parts[1]);
+      if (Number.isFinite(a) && Number.isFinite(b)) {
+        // 試兩種順序（lat,lon）或（lon,lat）
+        if (inRange(a, b)) return { lat: a, lon: b };
+        if (inRange(b, a)) return { lat: b, lon: a };
+      }
+    }
+
+    return null;
+
+    function inRange(lat, lon) {
+      return Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
+    }
+  }
+
+
   return (
     <div>
       <div
@@ -460,6 +645,31 @@ setPanY(newPan);
 
         {/* Buttons */}
         <div className="flex items-center gap-3">
+
+          {/* Search box + button */}
+          <input
+            value={searchQ}
+            onChange={(e) => setSearchQ(e.target.value)}
+            onKeyDown={onSearchKeyDown}
+            placeholder="Search: 地名 或 經緯度（例：台北101 / 25.033,121.565 / N25.033 E121.565）"
+            className="px-3 py-2 rounded-full text-black text-sm w-[40rem]"
+            style={{ background: "white" }}
+            disabled={searching}
+          />
+          <button
+            onClick={handleSearch}
+            disabled={searching || !searchQ.trim()}
+            className="px-5 py-3 rounded-full font-semibold"
+            style={{
+              backgroundColor: "var(--nasa-emerald)",
+              color: "white",
+              opacity: searching || !searchQ.trim() ? 0.6 : 1,
+            }}
+          >
+            {searching ? "Searching…" : "Search"}
+          </button>
+
+
           {testResp !== "" && (
             <pre className="text-white/90 text-xs px-3 py-2 rounded-lg whitespace-pre-wrap break-all">
               {testResp}
