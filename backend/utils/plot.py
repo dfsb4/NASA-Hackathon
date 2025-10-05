@@ -31,7 +31,7 @@ def plot_monthly_variable(month, years, values, var_name, unit):
     plt.close()
 
 def plot_all(month, lat, lon):
-    years = [2020, 2021, 2022, 2023, 2024]
+    years = [2022, 2023, 2024]
     month = month
     lat = lat
     lon = lon
