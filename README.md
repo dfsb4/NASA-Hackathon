@@ -8,16 +8,9 @@ This project is...
 ```
 NASA-Hackthon/
 │
-├── backend/                   # Backend for RAG + Gemini API
-│   ├── app.py                 # Main backend server using Flask
-│   ├── chromadb_handler.py    # ChromaDB integration for semantic search
-│   ├── embeddings.py          # Handles embedding generation and storage
-│   ├── rag_pipeline.py        # Retrieval-Augmented Generation pipeline
+├── backend/                   
+│   ├── app.py                 # Main backend server using FastAPI
 │   ├── requirements.txt       # Python dependencies
-│   ├── check_embeddings.py    # Script to check embeddings
-│   ├── debug_app.py           # Debugging application
-│   ├── extract_data.py        # Data extraction script
-│   ├── fetch_data.py           # Script to fetch data
 │
 └── frontend/                  # Vite + React Frontend for user interactions
     ├── src/
@@ -95,7 +88,7 @@ git clone https://github.com/dfsb4/NASA-Hackathon.git
 6. **Start the Backend Server:**
 
    ```bash
-   vicorn main:app --host 0.0.0.0 --port 8000 # For MacOS
+   uvicorn main:app --host 0.0.0.0 --port 8000 # For MacOS
    python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload # For Windows
 
    ```
