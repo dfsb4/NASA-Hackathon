@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://nasa-hackathon-3dwe.onrender.com'
 
@@ -70,11 +70,13 @@ function simulateModelResults(lat, lon, hours) {
   }
 }
 
-export default function PredictModal({ isOpen, onClose, pin, datetime }) {
+export default function PredictModal({ isOpen, onClose, pin, datetime, onApiError }) {
   const [loading, setLoading] = useState(false)
   const [forecast, setForecast] = useState(null)
   const [error, setError] = useState(null)
   const [model, setModel] = useState(null)
+  const isMountedRef = useRef(true)
+  const timeoutRef = useRef(null)
 
   // helper to map metric keys to units
   const unitForMetric = (k) => {
@@ -94,43 +96,108 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
 
   useEffect(() => {
     if (!isOpen) return
+    // mark mounted
+    isMountedRef.current = true
+    // if no pin is provided, show an error and do not start loading/prediction
+    if (!pin) {
+      setLoading(false)
+      setForecast(null)
+      setModel(null)
+      setError('Please place a pin on the map before predicting.')
+      return
+    }
     setLoading(true)
     setError(null)
     setForecast(null)
     setModel(null)
 
-    // attempt to call backend predict API; fall back to simulated data on failure
+    // attempt to call backend /api/weather; fall back to simulated data on failure
     const doFetch = async () => {
+      const lat = pin?.lat ?? 0
+      const lon = pin?.lon ?? 0
       try {
-        const resp = await fetch(`${API_BASE}/predict`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lat: pin?.lat, lon: pin?.lon, datetime }),
-        })
-        if (!resp.ok) throw new Error(`server ${resp.status}`)
+        const url = new URL(`${API_BASE}/api/weather`)
+        url.searchParams.set('latitude', String(lat))
+        url.searchParams.set('longitude', String(lon))
+        if (datetime) url.searchParams.set('datetime', String(datetime))
+        url.searchParams.set('units', 'metric')
+
+  const resp = await fetch(url.toString())
+  if (!resp.ok) throw new Error(`server ${resp.status}`)
         const json = await resp.json()
-        // if backend returns an enriched model, use it; else we'll generate later
-        setForecast(json)
-        if (json.model) setModel(json.model)
+
+        // map API response to our forecast + model shapes
+        const data = json.data || {}
+
+        // build a simple hourly series if the API does not provide hours
+        const baseTime = datetime ? new Date(datetime) : new Date()
+        const hours = []
+        const precipVal = data.precipitation?.value ?? 0
+        for (let i = 0; i < 8; i++) {
+          const t = new Date(baseTime.getTime() + i * 3600 * 1000)
+          hours.push({ time: t.toISOString(), precip: Number(precipVal) })
+        }
+        const total = hours.reduce((s, h) => s + h.precip, 0)
+        const summary = data.climate_description || (total > 20 ? 'Heavy precipitation expected' : total > 5 ? 'Moderate rain expected' : 'Light or no rain expected')
+
+        const forecastFromApi = { hours, total: Math.round(total * 10) / 10, summary }
+
+        const modelFromApi = {
+          metrics: {
+            temperature: Number(data.temperature?.value ?? NaN),
+            precipitation: Number(data.precipitation?.value ?? NaN),
+            humidity: Number(data.humidity?.value ?? NaN),
+            windspeed: Number(data.windspeed?.value ?? NaN),
+            air_quality: Number((data.air_quality?.value && Number(data.air_quality.value)) || (data.air_quality?.value ?? NaN)),
+          },
+          extremes: data.extreme_weather || {},
+          comfort: data.comfort_index || data.comfort || {},
+          description: data.climate_description || '',
+        }
+
+        // combine forecast summary and model description into one field
+        modelFromApi.description = `${forecastFromApi.summary}${modelFromApi.description ? ' ' + modelFromApi.description : ''}`.trim()
+
+        // clear any previous API error and set successful data
+        if (onApiError) onApiError(null)
+        setForecast(forecastFromApi)
+        setModel(modelFromApi)
+        setLoading(false)
+        return
       } catch (e) {
+        // signal API error to parent and continue with fallback
+        if (onApiError) onApiError(String(e))
         // fallback to simulated forecast
-        const lat = pin?.lat ?? 0
-        const lon = pin?.lon ?? 0
         const sim = simulateForecast(lat, lon, datetime)
         const simModel = simulateModelResults(lat, lon, sim.hours)
         // small delay to simulate network
-        setTimeout(() => {
+        // use a ref so we can clear on unmount
+        timeoutRef.current = setTimeout(() => {
+          if (!isMountedRef.current) return
+          // merge simulated forecast summary into model description
+          simModel.description = `${sim.summary}${simModel.description ? ' ' + simModel.description : ''}`.trim()
           setForecast(sim)
           setModel(simModel)
           setLoading(false)
         }, 600)
         return
       }
-      setLoading(false)
     }
 
     doFetch()
   }, [isOpen, pin, datetime])
+
+  // track mounted state and cleanup any pending timeouts
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+    }
+  }, [])
 
   if (!isOpen) return null
 
@@ -144,12 +211,10 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
         </div>
 
         {!pin && (
-          <div className="p-4 bg-red-900 rounded">Please place a pin on the map before predicting.</div>
+          <div className="p-4 bg-red-900 rounded" style={{ fontSize: '24px' }}>Please place a pin on the map before predicting.</div>
         )}
 
-        {loading && <div className="py-8">Loading forecast…</div>}
-
-        {error && <div className="p-3 bg-red-900 rounded">{String(error)}</div>}
+        {loading && <div className="py-8" style={{ fontSize: '24px' }}>Loading forecast…</div>}
 
         {forecast && (
           <div style={{ padding: "8px" }}>
@@ -214,24 +279,50 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
             {/* Export CSV button */}
             <div className="flex justify-end">
               <button
-                onClick={() => {
-                  // build CSV: hours + metrics
-                  const rows = []
-                  rows.push(['time','precip_mm'])
-                  forecast.hours.forEach(h => rows.push([h.time, h.precip]))
-                  rows.push([])
-                  rows.push(['metric','value'])
-                  if (model?.metrics) Object.entries(model.metrics).forEach(([k,v]) => rows.push([k,v]))
-                  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n')
-                  const blob = new Blob([csv], { type: 'text/csv' })
-                  const url = URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url
-                  a.download = `forecast_${Date.now()}.csv`
-                  document.body.appendChild(a)
-                  a.click()
-                  a.remove()
-                  URL.revokeObjectURL(url)
+                disabled={!pin}
+                title={!pin ? 'Place a pin first' : 'Export CSV (tries API first)'}
+                onClick={async () => {
+                  const lat = pin?.lat ?? 0
+                  const lon = pin?.lon ?? 0
+                  // try API CSV first
+                  try {
+                    const url = new URL(`${API_BASE}/api/history.csv`)
+                    url.searchParams.set('latitude', String(lat))
+                    url.searchParams.set('longitude', String(lon))
+                    const resp = await fetch(url.toString())
+                    if (resp.ok) {
+                      const blob = await resp.blob()
+                      const filename = `history_${lat}_${lon}_${Date.now()}.csv`
+                      const urlObj = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = urlObj
+                      a.download = filename
+                      document.body.appendChild(a)
+                      a.click()
+                      a.remove()
+                      URL.revokeObjectURL(urlObj)
+                      return
+                    }
+                    throw new Error(`server ${resp.status}`)
+                  } catch (e) {
+                    // fallback to local CSV builder
+                    const rows = []
+                    rows.push(['time','precip_mm'])
+                    (forecast?.hours || []).forEach(h => rows.push([h.time, h.precip]))
+                    rows.push([])
+                    rows.push(['metric','value'])
+                    if (model?.metrics) Object.entries(model.metrics).forEach(([k,v]) => rows.push([k,v]))
+                    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n')
+                    const blob = new Blob([csv], { type: 'text/csv' })
+                    const url2 = URL.createObjectURL(blob)
+                    const a2 = document.createElement('a')
+                    a2.href = url2
+                    a2.download = `forecast_${Date.now()}.csv`
+                    document.body.appendChild(a2)
+                    a2.click()
+                    a2.remove()
+                    URL.revokeObjectURL(url2)
+                  }
                 }}
                 className="px-4 py-2 rounded bg-white text-black font-semibold"
               >

@@ -29,6 +29,7 @@ export default function WeatherLensMap() {
   const geographiesRef = useRef(null);
   const [country, setCountry] = useState(null);
   const [predictOpen, setPredictOpen] = useState(false);
+  const [apiError, setApiError] = useState(null);
   const pointerDownRef = useRef(null);
   const [pin, setPin] = useState(null);
 
@@ -252,7 +253,7 @@ export default function WeatherLensMap() {
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      className={`relative to-gray-600 rounded-2xl p-0 overflow-hidden ${predictOpen ? 'pointer-events-none' : ''}`}
+      className={`relative to-gray-600 rounded-none p-0 overflow-hidden ${predictOpen ? 'pointer-events-none' : ''}`}
       style={{ touchAction: "none", height: containerHeightPx ? `${containerHeightPx}px` : '80vh', width: '100vw' }}
     >
       {/* Overlaid label in the top-left of the map (inside the relative container). */}
@@ -270,7 +271,14 @@ export default function WeatherLensMap() {
       >
         {/* draw a background rect so when the geographies are translated we don't reveal the container bg */}
         <g>
-          <rect x={0} y={0} width={VB_W} height={VB_H} fill="#333" />
+          <defs>
+            <linearGradient id="mapBg" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#6e6e6eff" />
+              <stop offset="50%" stopColor="#454848ff" />
+              <stop offset="100%" stopColor="#2f3638ff" />
+            </linearGradient>
+          </defs>
+          <rect x={0} y={0} width={VB_W} height={VB_H} fill="url(#mapBg)" />
           <g transform={`translate(0, ${panY})`}>
             <Geographies geography={geoUrl}>
               {({ geographies }) => {
@@ -391,6 +399,7 @@ export default function WeatherLensMap() {
             if (tEl && tEl.getAttribute('dateTime')) return tEl.getAttribute('dateTime');
             return new Date().toISOString();
           })()}
+          onApiError={setApiError}
         />
       
 
@@ -398,6 +407,12 @@ export default function WeatherLensMap() {
         <div className="absolute bottom-5 right-5 text-white text-sm text-right z-20" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', padding: '8px', letterSpacing: '0.08em'}}>
             {country ? country : '—'}
         </div>
+        {/* API error banner (shows at very bottom) */}
+        {apiError && (
+          <div className="absolute bottom-0 left-0 w-full text-center py-1 text-sm text-red-300" style={{ background: 'rgba(255,0,0,0.06)' }}>
+            API calling error
+          </div>
+        )}
 
       </div>
     </div>
