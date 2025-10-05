@@ -79,7 +79,7 @@ def precipitation():
     print("🔐 Earthdata loggin")
     earthaccess.login(strategy="environment")
 
-    years = list(range(2020, 2025))
+    years = list(range(2020, 2026))
     months = list(range(1, 13))
 
     if len(sys.argv) == 3:
@@ -89,6 +89,8 @@ def precipitation():
 
     for y in years:
         for m in months:
+            if y == 2025 and m > 5:
+                break
             download_one_month(y, m)
             time.sleep(SLEEP_BETWEEN_CALLS)
 
@@ -100,7 +102,7 @@ def temperature(dataset: str = "merra2_t2m"):
     print("🔐 Earthdata login")
     earthaccess.login(strategy="environment")
 
-    years = list(range(2020, 2025))
+    years = list(range(2020, 2026))
     months = list(range(1, 13))
     if len(sys.argv) == 4:
         y0, y1 = int(sys.argv[2]), int(sys.argv[3])
@@ -121,6 +123,8 @@ def temperature(dataset: str = "merra2_t2m"):
 
     for y in years:
         for m in months:
+            if y == 2025 and m > 5:
+                break
             download_one_month(
                 year=y, month=m,
                 short_name=short_name,
@@ -133,6 +137,6 @@ def temperature(dataset: str = "merra2_t2m"):
     print("temperature download finished")
     
 if __name__ == "__main__":
-    # precipitation()
+    precipitation()
     temperature("merra2_t2m")
-    # temperature("merra2_aer")
+    temperature("merra2_aer")

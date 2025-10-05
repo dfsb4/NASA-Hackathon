@@ -6,7 +6,7 @@ xarray
 dotenv
 earthaccess
 h5netcdf
-h5py 
+h5py
 netcdf4
 typing
 pydantic

@@ -10,9 +10,9 @@ from datetime import datetime as dt
 import os
 
 from utils.plot import plot_all
-from month.temperature import *
-from month.precipitation import *
-from month.air import *
+from month.precipitation import pred_precipitation
+from month.temperature import pred
+from month.air import pred_air_quality
 
 app = FastAPI(title="My Monorepo API", version="0.1.0")
 
@@ -63,19 +63,20 @@ def get_monthly_weather(
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid datetime. Use ISO 8601, e.g. 2025-10-04T08:00:00Z")
     month = f"{t.month:02d}"
-
-    temperature = 28.4
-    precipitation = 0.3
-    humidity = 68
-    windspeed = 2.7
-    air_quality = 50
+    description = []
+    temperature, humidity, windspeed, level = pred(latitude, longitude)
+    precipitation, rain_level = pred_precipitation(latitude, longitude)
+    air_quality, air_level = pred_air_quality(latitude, longitude)
+    description.append(level)
+    description.append(rain_level)
+    description.append(air_level)
 
     url_map = {
-        "temperature":   f"/static/temperature/{month}_temperature.png",
-        "precipitation": f"/static/precipitation/{month}_precipitation.png",
-        "humidity":      f"/static/humidity/{month}_humidity.png",
-        "windspeed":     f"/static/windspeed/{month}_windspeed.png",
-        "air_quality":   f"/static/air_quality/{month}_air_quality.png",
+        "temperature":   "/static/result/temperature/forecast_series.png",
+        "precipitation": "/static/result/precipitation/forecast_series.png",
+        "humidity":      "/static/result/humidity/forecast_series.png",
+        "windspeed":     "/static/result/windspeed/forecast_series.png",
+        "air_quality":   "/static/result/air_quality/forecast_series.png",
     }
 
     payload = {
@@ -89,8 +90,7 @@ def get_monthly_weather(
             "air_quality":   {"value": int(air_quality), "unit": "μg/m³"},
             "url": url_map,
             "climate_description": (
-                "Warm and humid morning with light southern wind. "
-                "Low chance of extreme weather. Slightly uncomfortable due to humidity."
+                description[0] + " " + description[1] + " " + description[2]
             ),
         },
     }

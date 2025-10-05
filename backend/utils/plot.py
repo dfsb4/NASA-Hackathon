@@ -56,11 +56,20 @@ def plot_all(month, lat, lon):
     plot_monthly_variable(month, years, preciplist, "precipitation", "mm")
     out_paths.append(f"/result/precipitation/{month}_precipitation.png")
 
+    
     temperaturelist = []
     humiditylist = []
     windspeedlist = []
     for year in years:
-        path = f"./data/temperature/{year}/{month}/MERRA2_400.tavgM_2d_slv_Nx.{year}{month}.nc4"
+        path_400 = f"./data/temperature/{year}/{month}/MERRA2_400.tavgM_2d_slv_Nx.{year}{month}.nc4"
+        path_401 = f"./data/temperature/{year}/{month}/MERRA2_401.tavgM_2d_slv_Nx.{year}{month}.nc4"
+
+        if os.path.exists(path_400):
+            path = path_400
+        elif os.path.exists(path_401):
+            path = path_401
+        else:
+            continue
         ds = xr.open_dataset(
             path,
             engine="netcdf4"
@@ -96,9 +105,19 @@ def plot_all(month, lat, lon):
     plot_monthly_variable(month, years, humiditylist, "humidity", "%")
     plot_monthly_variable(month, years, windspeedlist, "windspeed", "m/s")
 
+    
     airqualitylist = []
     for year in years:
-        path = f"./data/air_quality/{year}/{month}/MERRA2_400.tavgM_2d_aer_Nx.{year}{month}.nc4"
+        path_400 = f"./data/air_quality/{year}/{month}/MERRA2_400.tavgM_2d_aer_Nx.{year}{month}.nc4"
+        path_401 = f"./data/air_quality/{year}/{month}/MERRA2_401.tavgM_2d_aer_Nx.{year}{month}.nc4"
+
+        if os.path.exists(path_400):
+            path = path_400
+        elif os.path.exists(path_401):
+            path = path_401
+        else:
+            continue
+
         ds = xr.open_dataset(
             path,
             engine="netcdf4"
