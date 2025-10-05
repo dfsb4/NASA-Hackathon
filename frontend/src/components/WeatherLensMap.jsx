@@ -7,10 +7,9 @@ import {
   ZoomableGroup,
 } from "react-simple-maps";
 import * as d3 from "d3-geo";
-import PredictModal from './custom/PredictModal'
+import PredictModal from "./custom/PredictModal";
 
-const geoUrl =
-  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 const API_BASE =
   import.meta.env.VITE_API_URL || "https://nasa-hackathon-3dwe.onrender.com";
 
@@ -32,6 +31,7 @@ export default function WeatherLensMap() {
   const [apiError, setApiError] = useState(null);
   const pointerDownRef = useRef(null);
   const [pin, setPin] = useState(null);
+  const [zoom, setZoom] = useState(1);
 
   // Pointer drag start refs
   const startPointerViewRef = useRef({ x: 0, y: 0 }); // viewBox coords at pointer start
@@ -44,7 +44,11 @@ export default function WeatherLensMap() {
 
   // Helper: build a projection for a given rotation (lon)
   const makeProjection = (rotLon = rotationRef.current) =>
-    d3.geoMercator().scale(200).translate([VB_W / 2, VB_H / 2]).rotate([rotLon, 0]);
+    d3
+      .geoMercator()
+      .scale(200 * zoom)
+      .translate([VB_W / 2, VB_H / 2])
+      .rotate([rotLon, 0]);
 
   // Convert client (event.clientX/Y) to SVG viewBox coordinates, honoring
   // preserveAspectRatio="xMidYMid slice" behavior.
@@ -62,20 +66,25 @@ export default function WeatherLensMap() {
 
   // Coordinate formatting helpers
   const fmtLat = (lat) => {
-    if (lat === null || lat === undefined || Number.isNaN(lat)) return '--';
+    if (lat === null || lat === undefined || Number.isNaN(lat)) return "--";
     const abs = Math.abs(Number(lat));
-    const dir = lat >= 0 ? 'N' : 'S';
+    const dir = lat >= 0 ? "N" : "S";
     return `${abs.toFixed(3)}°${dir}`;
-  }
+  };
   const fmtLon = (lon) => {
-    if (lon === null || lon === undefined || Number.isNaN(lon)) return '--';
+    if (lon === null || lon === undefined || Number.isNaN(lon)) return "--";
     const abs = Math.abs(Number(lon));
-    const dir = lon >= 0 ? 'E' : 'W';
+    const dir = lon >= 0 ? "E" : "W";
     return `${abs.toFixed(3)}°${dir}`;
-  }
+  };
 
   // Compute and set lat/lon for display using the current projection + panY
-  const updateCoordsFromClient = (clientX, clientY, rotLon = rotationLon, currentPanY = panY) => {
+  const updateCoordsFromClient = (
+    clientX,
+    clientY,
+    rotLon = rotationLon,
+    currentPanY = panY
+  ) => {
     if (!containerRef.current) return;
     const view = clientToViewBox(clientX, clientY);
     // Account for vertical translation applied to geographies (panY is in viewBox px)
@@ -100,7 +109,13 @@ export default function WeatherLensMap() {
       for (const geo of geographiesRef.current) {
         // geo is a GeoJSON feature produced by react-simple-maps
         if (d3.geoContains(geo, [lon, lat])) {
-          const name = geo.properties.ADMIN || geo.properties.name || geo.properties.NAME || geo.properties.NAME_LONG || geo.properties.SOVEREIGNT || null;
+          const name =
+            geo.properties.ADMIN ||
+            geo.properties.name ||
+            geo.properties.NAME ||
+            geo.properties.NAME_LONG ||
+            geo.properties.SOVEREIGNT ||
+            null;
           setCountry(name || null);
           return;
         }
@@ -156,12 +171,20 @@ export default function WeatherLensMap() {
     }
 
     // Vertical pan: difference in viewBox y since start
-    const dy = v.y - startPointerViewRef.current.y;
-    const newPan = startPanYRef.current + dy;
-    // clamp to avoid revealing background; tweak limits as needed
-    const clamped = Math.max(Math.min(newPan, 200), -200);
-    panYRef.current = clamped;
-    setPanY(clamped);
+    // const dy = v.y - startPointerViewRef.current.y;
+    // const newPan = startPanYRef.current + dy;
+    // // clamp to avoid revealing background; tweak limits as needed
+    // const clamped = Math.max(Math.min(newPan, 200), -200);
+    // panYRef.current = clamped;
+    // setPanY(clamped);
+
+    // Vertical pan: difference in viewBox y since start
+// Vertical pan: difference in viewBox y since start
+const dy = v.y - startPointerViewRef.current.y;
+const newPan = startPanYRef.current + dy;
+// 移除 clamp：直接無限累積，像 rotationLon
+panYRef.current = newPan;
+setPanY(newPan);
 
     // Update the coordinate display using the freshly-updated rotation and pan
     updateCoordsFromClient(e.clientX, e.clientY, rotationRef.current, clamped);
@@ -213,22 +236,22 @@ export default function WeatherLensMap() {
   const [containerHeightPx, setContainerHeightPx] = useState(null);
   useEffect(() => {
     const resize = () => {
-      const header = document.getElementById('site-header');
+      const header = document.getElementById("site-header");
       const headerH = header ? header.getBoundingClientRect().height : 0;
       const h = Math.max(window.innerHeight - headerH, 200);
       setContainerHeightPx(h);
     };
     resize();
-    window.addEventListener('resize', resize);
+    window.addEventListener("resize", resize);
     // also observe header size in case it changes dynamically
-    const headerEl = document.getElementById('site-header');
+    const headerEl = document.getElementById("site-header");
     let ro;
-    if (headerEl && typeof ResizeObserver !== 'undefined') {
+    if (headerEl && typeof ResizeObserver !== "undefined") {
       ro = new ResizeObserver(resize);
       ro.observe(headerEl);
     }
     return () => {
-      window.removeEventListener('resize', resize);
+      window.removeEventListener("resize", resize);
       if (ro && headerEl) ro.unobserve(headerEl);
     };
   }, []);
@@ -248,129 +271,192 @@ export default function WeatherLensMap() {
 
   return (
     <div>
-    <div
-      ref={containerRef}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      className={`relative to-gray-600 rounded-none p-0 overflow-hidden ${predictOpen ? 'pointer-events-none' : ''}`}
-      style={{ touchAction: "none", height: containerHeightPx ? `${containerHeightPx}px` : '80vh', width: '100vw' }}
-    >
-      {/* Overlaid label in the top-left of the map (inside the relative container). */}
-      <h2 className="absolute top-4 left-4 z-20 text-white text-2xl font-semibold bg-black/30 px-3 py-1 rounded pointer-events-none" style={{fontFamily: '"DM Serif Display", serif', fontWeight: '400', fontStyle: 'normal', display: "inline", color: "var(--nasa-muted)", fontSize: "24px", letterSpacing: '0.15em'}}>
-        LOCATION
-      </h2>
-
-
-      <ComposableMap
-        projection={makeProjection(rotationLon)}
-        width={VB_W}
-        height={VB_H}
-        style={{ width: "100%", height: "100%" }}
-        preserveAspectRatio="xMidYMid slice"
+      <div
+        ref={containerRef}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onWheel={(e) => {
+          e.preventDefault(); 
+          const factor = e.deltaY < 0 ? 1.2 : 0.8; 
+          setZoom((prev) => {
+            const newZoom = prev * factor;
+            return Math.max(1, Math.min(newZoom, 8)); 
+          });
+        }}
+        className={`relative to-gray-600 rounded-none p-0 overflow-hidden ${
+          predictOpen ? "pointer-events-none" : ""
+        }`}
+        style={{
+          touchAction: "none",
+          height: containerHeightPx ? `${containerHeightPx}px` : "80vh",
+          width: "100vw",
+        }}
       >
-        {/* draw a background rect so when the geographies are translated we don't reveal the container bg */}
-        <g>
-          <defs>
-            <linearGradient id="mapBg" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#cbc8c8ff" />
-              <stop offset="50%" stopColor="#cbc8c8ff" />
-              <stop offset="100%" stopColor="#cbc8c8ff" />
-            </linearGradient>
-          </defs>
-          <rect x={0} y={0} width={VB_W} height={VB_H} fill="url(#mapBg)" />
-          <g transform={`translate(0, ${panY})`}>
-            <Geographies geography={geoUrl}>
-              {({ geographies }) => {
-                // store geographies for country lookup later
-                geographiesRef.current = geographies;
-                return geographies.map((geo) => (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill="#f1efefff"
-                    stroke="#939292ff"
-                    tabIndex={-1}
-                    focusable={false} 
-                    style={{
-                      default: { outline: "none" },
-                      hover: { fill: "var(--nasa-muted)", transition: "0.3s" },
-                    }}
-                  />
-                ));
-              }}
-            </Geographies>
-            {/* Continent labels (projected). All labels share the `region-label` class so styles live in index.css */}
-            {(() => {
-              try {
-                const proj = makeProjection(rotationLon);
-                const regions = [
-                  { name: 'NORTH AMERICA', lon: -100, lat: 35 },
-                  { name: 'SOUTH AMERICA', lon: -58, lat: -10 },
-                  { name: 'EUROPE', lon: 20, lat: 50 },
-                  { name: 'AFRICA', lon: 27, lat: 0 },
-                  { name: 'ASIA', lon: 90, lat: 46.5 },
-                  { name: 'OCEANIA', lon: 133.5, lat: -28 },
-                ];
-                return regions.map((r) => {
-                  const pt = proj([r.lon, r.lat]);
-                  if (!pt) return null;
-                  return (
-                    <text
-                      key={r.name}
-                      className="region-label"
-                      x={pt[0]}
-                      y={pt[1]}
-                      textAnchor="middle"
-                      style={{ pointerEvents: 'none', fill: 'var(--nasa-emerald)' }}
-                    >
-                      {r.name}
-                    </text>
-                  );
-                });
-              } catch (e) {
-                return null;
-              }
-            })()}
-            {/* single pin rendered in same transformed group so it moves with the map */}
-            {pin && (() => {
-              try {
-                const proj = makeProjection(rotationLon);
-                const pt = proj([pin.lon, pin.lat]);
-                if (!pt) return null;
-                // center the pin image (assume 28x28)
-                const size = 28;
-                return (
-                  <g key={`pin`} transform={`translate(${pt[0] - size/2}, ${pt[1] - size})`} style={{ pointerEvents: 'none' }}>
-                    {/* Inline pin SVG so we can style the fill using CSS variables (supports --nasa--emulate with fallback) */}
-                    <svg width={size} height={size} viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" style={{ overflow: 'visible' }}>
-                      <path d="M14 0C9.029 0 5 4.03 5 9.01 5 16.01 14 28 14 28s9-11.99 9-18.99C23 4.03 18.971 0 14 0z" fill="var(--nasa-emerald)" />
-                      <circle cx="14" cy="9" r="3.5" fill="white" />
-                    </svg>
+        {/* Overlaid label in the top-left of the map (inside the relative container). */}
+        <h2
+          className="absolute top-4 left-4 z-20 text-white text-2xl font-semibold bg-black/30 px-3 py-1 rounded pointer-events-none"
+          style={{
+            fontFamily: '"DM Serif Display", serif',
+            fontWeight: "400",
+            fontStyle: "normal",
+            display: "inline",
+            color: "var(--nasa-muted)",
+            fontSize: "24px",
+            letterSpacing: "0.15em",
+          }}
+        >
+          LOCATION
+        </h2>
 
-                    {/* place label below the pin SVG (size + offset) and use CSS token for color */}
-                    <text x={size / 2} y={size + 12} textAnchor="middle" fontSize={10} fill="var(--nasa-deep)" style={{ fontFamily: '"Bitter", serif', fontWeight: 700 }}>
-                      {`${fmtLon(pin.lon)} , ${fmtLat(pin.lat)}`}
-                    </text>
-                  </g>
-                );
-              } catch (e) {
-                return null;
-              }
-            })()}
+        <ComposableMap
+          projection={makeProjection(rotationLon)}
+          width={VB_W}
+          height={VB_H}
+          style={{ width: "100%", height: "100%" }}
+          preserveAspectRatio="xMidYMid slice"
+        >
+          {/* draw a background rect so when the geographies are translated we don't reveal the container bg */}
+          <g>
+            <defs>
+              <linearGradient id="mapBg" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#cbc8c8ff" />
+                <stop offset="50%" stopColor="#cbc8c8ff" />
+                <stop offset="100%" stopColor="#cbc8c8ff" />
+              </linearGradient>
+            </defs>
+            <rect x={0} y={0} width={VB_W} height={VB_H} fill="url(#mapBg)" />
+            <g transform={`translate(0, ${panY})`}>
+              <Geographies geography={geoUrl}>
+                {({ geographies }) => {
+                  // store geographies for country lookup later
+                  geographiesRef.current = geographies;
+                  return geographies.map((geo) => (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      fill="#f1efefff"
+                      stroke="#939292ff"
+                      tabIndex={-1}
+                      focusable={false}
+                      style={{
+                        default: { outline: "none" },
+                        hover: {
+                          fill: "var(--nasa-muted)",
+                          transition: "0.3s",
+                        },
+                      }}
+                    />
+                  ));
+                }}
+              </Geographies>
+              {/* Continent labels (projected). All labels share the `region-label` class so styles live in index.css */}
+              {(() => {
+                try {
+                  const proj = makeProjection(rotationLon);
+                  const regions = [
+                    { name: "NORTH AMERICA", lon: -100, lat: 35 },
+                    { name: "SOUTH AMERICA", lon: -58, lat: -10 },
+                    { name: "EUROPE", lon: 20, lat: 50 },
+                    { name: "AFRICA", lon: 27, lat: 0 },
+                    { name: "ASIA", lon: 90, lat: 46.5 },
+                    { name: "OCEANIA", lon: 133.5, lat: -28 },
+                  ];
+                  return regions.map((r) => {
+                    const pt = proj([r.lon, r.lat]);
+                    if (!pt) return null;
+                    return (
+                      <text
+                        key={r.name}
+                        className="region-label"
+                        x={pt[0]}
+                        y={pt[1]}
+                        textAnchor="middle"
+                        style={{
+                          pointerEvents: "none",
+                          fill: "var(--nasa-emerald)",
+                        }}
+                      >
+                        {r.name}
+                      </text>
+                    );
+                  });
+                } catch (e) {
+                  return null;
+                }
+              })()}
+              {/* single pin rendered in same transformed group so it moves with the map */}
+              {pin &&
+                (() => {
+                  try {
+                    const proj = makeProjection(rotationLon);
+                    const pt = proj([pin.lon, pin.lat]);
+                    if (!pt) return null;
+                    // center the pin image (assume 28x28)
+                    const size = 28;
+                    return (
+                      <g
+                        key={`pin`}
+                        transform={`translate(${pt[0] - size / 2}, ${
+                          pt[1] - size
+                        })`}
+                        style={{ pointerEvents: "none" }}
+                      >
+                        {/* Inline pin SVG so we can style the fill using CSS variables (supports --nasa--emulate with fallback) */}
+                        <svg
+                          width={size}
+                          height={size}
+                          viewBox="0 0 28 28"
+                          xmlns="http://www.w3.org/2000/svg"
+                          style={{ overflow: "visible" }}
+                        >
+                          <path
+                            d="M14 0C9.029 0 5 4.03 5 9.01 5 16.01 14 28 14 28s9-11.99 9-18.99C23 4.03 18.971 0 14 0z"
+                            fill="var(--nasa-emerald)"
+                          />
+                          <circle cx="14" cy="9" r="3.5" fill="white" />
+                        </svg>
+
+                        {/* place label below the pin SVG (size + offset) and use CSS token for color */}
+                        <text
+                          x={size / 2}
+                          y={size + 12}
+                          textAnchor="middle"
+                          fontSize={10}
+                          fill="var(--nasa-deep)"
+                          style={{
+                            fontFamily: '"Bitter", serif',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {`${fmtLon(pin.lon)} , ${fmtLat(pin.lat)}`}
+                        </text>
+                      </g>
+                    );
+                  } catch (e) {
+                    return null;
+                  }
+                })()}
+            </g>
           </g>
-        </g>
-      </ComposableMap>
-      {/* </ZoomableGroup> */}
+        </ComposableMap>
+        {/* </ZoomableGroup> */}
       </div>
 
       {/* Footer block */}
       <div className="w-full absolute bottom-0 left-0 p-3 shadow-sm flex flex-col items-center px-5 bg-nasa-dark-gray-azure/90 ring-1 ring-white/10 text-white gap-4">
         {/* Coordinate readout */}
-        <div className="text-sm absolute bottom-5 left-5" style={{ fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', letterSpacing: '0.08em' }}>
-         {fmtLon(coords.lon)} , {fmtLat(coords.lat)}
+        <div
+          className="text-sm absolute bottom-5 left-5"
+          style={{
+            fontFamily: '"Bitter", serif',
+            fontWeight: "700",
+            fontSize: "24px",
+            letterSpacing: "0.08em",
+          }}
+        >
+          {fmtLon(coords.lon)} , {fmtLat(coords.lat)}
         </div>
-
 
         {/* Buttons */}
         <div className="flex items-center gap-3">
@@ -381,7 +467,7 @@ export default function WeatherLensMap() {
           )}
 
           <button
-          style={{ backgroundColor: 'var(--nasa-deep)' }}
+            style={{ backgroundColor: "var(--nasa-deep)" }}
             onClick={() => setPredictOpen(true)}
             className="text-white px-6 py-3 rounded-full font-semibold justify-center"
           >
@@ -395,25 +481,36 @@ export default function WeatherLensMap() {
           onClose={() => setPredictOpen(false)}
           pin={pin}
           datetime={(() => {
-            const tEl = document.querySelector('#site-header time');
-            if (tEl && tEl.getAttribute('dateTime')) return tEl.getAttribute('dateTime');
+            const tEl = document.querySelector("#site-header time");
+            if (tEl && tEl.getAttribute("dateTime"))
+              return tEl.getAttribute("dateTime");
             return new Date().toISOString();
           })()}
           onApiError={setApiError}
         />
-      
 
         {/* bottom-right: country name determined from current coords */}
-        <div className="absolute bottom-5 right-5 text-white text-sm text-right z-20" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', padding: '8px', letterSpacing: '0.08em'}}>
-            {country ? country : '—'}
+        <div
+          className="absolute bottom-5 right-5 text-white text-sm text-right z-20"
+          style={{
+            fontFamily: '"Bitter", serif',
+            fontWeight: "700",
+            fontSize: "24px",
+            padding: "8px",
+            letterSpacing: "0.08em",
+          }}
+        >
+          {country ? country : "—"}
         </div>
         {/* API error banner (shows at very bottom) */}
         {apiError && (
-          <div className="absolute bottom-0 left-0 w-full text-center py-1 text-sm text-red-300" style={{ background: 'rgba(255,0,0,0.06)' }}>
+          <div
+            className="absolute bottom-0 left-0 w-full text-center py-1 text-sm text-red-300"
+            style={{ background: "rgba(255,0,0,0.06)" }}
+          >
             API calling error
           </div>
         )}
-
       </div>
     </div>
   );
