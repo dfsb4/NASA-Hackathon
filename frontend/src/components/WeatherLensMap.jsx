@@ -7,6 +7,7 @@ import {
   ZoomableGroup,
 } from "react-simple-maps";
 import * as d3 from "d3-geo";
+import PredictModal from './custom/PredictModal'
 
 const geoUrl =
   "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
@@ -27,6 +28,9 @@ export default function WeatherLensMap() {
   const draggingRef = useRef(false);
   const geographiesRef = useRef(null);
   const [country, setCountry] = useState(null);
+  const [predictOpen, setPredictOpen] = useState(false);
+  const pointerDownRef = useRef(null);
+  const [pin, setPin] = useState(null);
 
   // Pointer drag start refs
   const startPointerViewRef = useRef({ x: 0, y: 0 }); // viewBox coords at pointer start
@@ -97,6 +101,8 @@ export default function WeatherLensMap() {
     containerRef.current.setPointerCapture(e.pointerId);
     draggingRef.current = true;
     const v = clientToViewBox(e.clientX, e.clientY);
+    // record raw client down for click detection
+    pointerDownRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
     startPointerViewRef.current = { x: v.x, y: v.y };
     startRotationRef.current = rotationRef.current;
     startPanYRef.current = panYRef.current;
@@ -150,6 +156,34 @@ export default function WeatherLensMap() {
     try {
       containerRef.current.releasePointerCapture(e.pointerId);
     } catch (err) {}
+    // determine if this was a click (small movement and short time)
+    const down = pointerDownRef.current;
+    const up = { x: e.clientX, y: e.clientY, t: Date.now() };
+    let isClick = false;
+    if (down) {
+      const dx = up.x - down.x;
+      const dy = up.y - down.y;
+      const dist = Math.hypot(dx, dy);
+      const dt = up.t - down.t;
+      if (dist < 6 && dt < 300) isClick = true;
+    }
+
+    if (isClick) {
+      // map client -> viewBox -> lon/lat (account for panY)
+      const view = clientToViewBox(e.clientX, e.clientY);
+      const proj = makeProjection(rotationRef.current);
+      const adj = [view.x, view.y - panYRef.current];
+      const inv = proj.invert(adj);
+      if (inv) {
+        const [lon, lat] = inv;
+        // replace existing pin with the new one (only one pin at a time)
+        setPin({ lon, lat });
+        // also update coords and country
+        setCoords({ lat: lat.toFixed(3), lon: lon.toFixed(3) });
+        findCountryFromLonLat(lon, lat);
+      }
+    }
+
     draggingRef.current = false;
     containerRef.current.style.cursor = "grab";
   };
@@ -197,18 +231,20 @@ export default function WeatherLensMap() {
   };
 
   return (
+    <div>
     <div
       ref={containerRef}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      className="relative w-full to-gray-600 rounded-2xl p-0 overflow-hidden"
-      style={{ touchAction: "none", height: containerHeightPx ? `${containerHeightPx}px` : '80vh' }}
+      className={`relative to-gray-600 rounded-2xl p-0 overflow-hidden ${predictOpen ? 'pointer-events-none' : ''}`}
+      style={{ touchAction: "none", height: containerHeightPx ? `${containerHeightPx}px` : '80vh', width: '100vw' }}
     >
       {/* Overlaid label in the top-left of the map (inside the relative container). */}
       <h2 className="absolute top-4 left-4 z-20 text-white text-2xl font-semibold bg-black/30 px-3 py-1 rounded pointer-events-none" style={{fontFamily: '"DM Serif Display", serif', fontWeight: '400', fontStyle: 'normal', display: "inline", color: "var(--nasa-muted)", fontSize: "24px", letterSpacing: '0.15em'}}>
         LOCATION
       </h2>
+
 
       <ComposableMap
         projection={makeProjection(rotationLon)}
@@ -271,38 +307,81 @@ export default function WeatherLensMap() {
                 return null;
               }
             })()}
+            {/* single pin rendered in same transformed group so it moves with the map */}
+            {pin && (() => {
+              try {
+                const proj = makeProjection(rotationLon);
+                const pt = proj([pin.lon, pin.lat]);
+                if (!pt) return null;
+                // center the pin image (assume 28x28)
+                const size = 28;
+                return (
+                  <g key={`pin`} transform={`translate(${pt[0] - size/2}, ${pt[1] - size})`} style={{ pointerEvents: 'none' }}>
+                    {/* Inline pin SVG so we can style the fill using CSS variables (supports --nasa--emulate with fallback) */}
+                    <svg width={size} height={size} viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" style={{ overflow: 'visible' }}>
+                      <path d="M14 0C9.029 0 5 4.03 5 9.01 5 16.01 14 28 14 28s9-11.99 9-18.99C23 4.03 18.971 0 14 0z" fill="var(--nasa-emerald)" />
+                      <circle cx="14" cy="9" r="3.5" fill="white" />
+                    </svg>
+
+                    {/* place label below the pin SVG (size + offset) and use CSS token for color */}
+                    <text x={size / 2} y={size + 12} textAnchor="middle" fontSize={10} fill="var(--nasa-muted)" style={{ fontFamily: '"Bitter", serif', fontWeight: 700 }}>
+                      {`${pin.lon.toFixed(3)}, ${pin.lat.toFixed(3)}`}
+                    </text>
+                  </g>
+                );
+              } catch (e) {
+                return null;
+              }
+            })()}
           </g>
         </g>
       </ComposableMap>
-
-      {/* bottom-left: coordinate readout (kept small) */}
-      <div className="absolute bottom-3 left-4 text-white text-sm" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '18px', padding: '8px', letterSpacing: '0.08em'}}>
-        Lon: {coords.lon || "--"}°E, Lat: {coords.lat || "--"}°N
+      {/* </ZoomableGroup> */}
       </div>
 
-      <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex items-center gap-3 max-w-[80%] z-20">
-        {testResp !== "" && (
-          <pre className="text-white/90 text-xs bg-black/40 px-3 py-2 rounded-lg whitespace-pre-wrap break-all">
-            {testResp}
-          </pre>
-        )}
+      {/* Footer block */}
+      <div className="w-full absolute bottom-0 left-0 bg-gray-800 text-white py-4 px-6 flex flex-col items-center gap-4" style={{ backgroundColor: 'var(--nasa-emerald)' }}>
+        {/* Coordinate readout */}
+        <div className="text-sm absolute bottom-3 left-4" style={{ fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '18px', letterSpacing: '0.08em' }}>
+          Lon: {coords.lon || "--"}°E, Lat: {coords.lat || "--"}°N
+        </div>
 
-        <button
-          onClick={handleTest}
-          disabled={testing}
-          className="disabled:opacity-60 disabled:cursor-not-allowed text-white px-5 py-2 rounded-full font-semibold justify-center"
-        >
-          {testing ? "Testing..." : "Test"}
-        </button>
 
-        <button className="text-white px-6 py-2 rounded-full font-semibold justify-center">
-          Predict
-        </button>
-      </div>
+        {/* Buttons */}
+        <div className="flex items-center gap-3">
+          {testResp !== "" && (
+            <pre className="text-white/90 text-xs px-3 py-2 rounded-lg whitespace-pre-wrap break-all">
+              {testResp}
+            </pre>
+          )}
 
-      {/* bottom-right: country name determined from current coords */}
-      <div className="absolute bottom-3 right-4 text-white text-sm text-right z-20" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '18px', padding: '8px', letterSpacing: '0.08em'}}>
-        {country ? country : '—'}
+          <button
+          style={{ backgroundColor: 'var(--nasa-dark)' }}
+            onClick={() => setPredictOpen(true)}
+            className="text-white px-6 py-3 rounded-full font-semibold justify-center"
+          >
+            Predict
+          </button>
+        </div>
+
+        {/* Predict modal */}
+        <PredictModal
+          isOpen={predictOpen}
+          onClose={() => setPredictOpen(false)}
+          pin={pin}
+          datetime={(() => {
+            const tEl = document.querySelector('#site-header time');
+            if (tEl && tEl.getAttribute('dateTime')) return tEl.getAttribute('dateTime');
+            return new Date().toISOString();
+          })()}
+        />
+      
+
+        {/* bottom-right: country name determined from current coords */}
+        <div className="absolute bottom-3 right-4 text-white text-sm text-right z-20" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '18px', padding: '8px', letterSpacing: '0.08em'}}>
+            {country ? country : '—'}
+        </div>
+
       </div>
     </div>
   );
