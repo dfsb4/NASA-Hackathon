@@ -15,7 +15,10 @@ function simulateForecast(lat, lon, datetime) {
     hours.push({ time: t.toISOString(), precip })
   }
   const total = hours.reduce((s, h) => s + h.precip, 0)
-  const summary = total > 20 ? 'Heavy precipitation expected' : total > 5 ? 'Moderate rain expected' : 'Light or no rain expected'
+  const summary = 'Persistent rainfall is expected throughout the day, with precipitation peaking in the early afternoon. \
+Humidity levels will remain high, creating a damp and uncomfortable atmosphere. \
+Winds are moderate but may increase near coastal areas as the system strengthens. \
+Residents should prepare for occasional thunderstorms and possible flooding in low-lying regions.'
   return { hours, total: Math.round(total * 10) / 10, summary }
 }
 
@@ -134,11 +137,16 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
 
         {forecast && (
           <div>
-            <div className="mb-3 text-sm text-nasa-muted" style={{ fontSize: '20px', flex: 1 }}>
-              Location: {pin ? `${Math.abs(pin.lat).toFixed(3)}°${pin.lat >= 0 ? 'N' : 'S'}, ${Math.abs(pin.lon).toFixed(3)}°${pin.lon >= 0 ? 'E' : 'W'}` : '—'}
+            <div className="mb-3 flex items-start" style={{ paddingBottom: '12px' }}>
+              <div className="text-sm text-nasa-muted" style={{ fontSize: '24px', paddingRight: '40px', paddingLeft: '6px', textAlign: 'left' }}>
+                Location: {pin ? `${Math.abs(pin.lat).toFixed(3)}°${pin.lat >= 0 ? 'N' : 'S'}, ${Math.abs(pin.lon).toFixed(3)}°${pin.lon >= 0 ? 'E' : 'W'}` : '—'}
+              </div>
+              <div className="text-sm text-nasa-muted" style={{ fontSize: '24px', textAlign: 'left' }}>
+                Date & Time: {datetime ? new Date(datetime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
+              </div>
             </div>
 
-            <div className="mb-4 font-semibold">Summary: {forecast.summary} — total {forecast.total} mm</div>
+            <div className="mb-4 font-semibold" style={{ fontSize: '20px', textAlign: 'left', paddingLeft: '6px', paddingBottom: '12px', fontWeight: '400' }}> {forecast.summary}</div>
 
             {/* Metrics tiles: temperature, precipitation, humidity, windspeed, air_quality */}
             <div className="grid grid-cols-5 gap-3 mb-4">
@@ -156,7 +164,7 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
 
             {/* Extremes: show only entries with probability > 0.07 */}
             <div className="mb-3">
-              <div className="text-sm text-nasa-muted mb-2 font-semibold">Notable extreme weather probabilities</div>
+              <div className="text-sm text-nasa-muted mb-2 font-semibold" style={{ fontSize: '20px' }}>Notable extreme weather probabilities</div>
               <div className="flex gap-3 flex-wrap">
                 {model?.extremes && Object.entries(model.extremes).filter(([k,v]) => v > 0.07).map(([k,v]) => (
                   <div key={k} className="px-3 py-2 bg-black/20 rounded">{k.replace(/_/g,' ')}: {(v*100).toFixed(0)}%</div>
@@ -169,7 +177,7 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
 
             {/* Comfort */}
             <div className="mb-3">
-              <div className="text-sm text-nasa-muted mb-2 font-semibold">Comfort concerns</div>
+              <div className="text-sm text-nasa-muted mb-2 font-semibold" style={{ fontSize: '20px' }}>Comfort concerns</div>
               <div className="flex gap-3 flex-wrap">
                 {model?.comfort && Object.entries(model.comfort).filter(([k,v]) => v > 0.07).map(([k,v]) => (
                   <div key={k} className="px-3 py-2 bg-black/20 rounded">{k.replace(/_/g,' ')}: {(v*100).toFixed(0)}%</div>
@@ -182,21 +190,6 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
 
             {/* Description */}
             <div className="mb-4 text-sm text-nasa-muted">{model?.description}</div>
-
-            {/* Hourly bar chart */}
-            <div className="w-full h-36 bg-black/20 rounded p-3 flex items-end gap-2 mb-4">
-              {forecast.hours.map((h, i) => {
-                const max = Math.max(...forecast.hours.map((x) => x.precip), 1)
-                const height = Math.round((h.precip / max) * 100)
-                const label = new Date(h.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                return (
-                  <div key={i} className="flex flex-col items-center" style={{ width: '10%' }}>
-                    <div style={{ height: `${height}%`, width: '100%', background: 'linear-gradient(180deg,#60a5fa,#0ea5e9)', borderRadius: 4 }} title={`${h.precip} mm`} />
-                    <div className="text-xs text-nasa-muted mt-1">{label}</div>
-                  </div>
-                )
-              })}
-            </div>
 
             {/* Export CSV button */}
             <div className="flex justify-end">
@@ -225,8 +218,6 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
                 Export CSV
               </button>
             </div>
-
-            <div className="mt-4 text-sm text-nasa-muted">This forecast is simulated when the backend is unavailable.</div>
           </div>
         )}
       </div>
