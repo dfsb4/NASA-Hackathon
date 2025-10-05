@@ -162,8 +162,7 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
               </div>
             </div>
 
-            <div className="text-sm text-nasa-muted mb-2 font-semibold" style={{ fontSize: '28px', padding: '20px 10px 16px 0px', textAlign: 'left' }}>Summary</div>
-
+            <div className="text-sm text-nasa-muted mb-2 font-semibold" style={{ fontSize: '28px', padding: '20px 0px 10px 0px', textAlign: 'left' }}>Summary</div>
             <div className="mb-4 font-semibold" style={{ fontSize: '20px', textAlign: 'left',  paddingBottom: '12px', paddingLeft: '0px', fontWeight: '400' }}> {forecast.summary}</div>
 
             {/* Metrics tiles: temperature, precipitation, humidity, windspeed, air_quality */}
@@ -181,14 +180,13 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
             </div>
 
             {/* Extremes: show only entries with probability > 0.07 */}
-            <div className="mb-3">
+            <div className="mb-3" >
               <div className="text-sm text-nasa-muted mb-2 font-semibold" style={{ fontSize: '28px', padding: '20px 0px 16px 0px', textAlign: 'left' }}>Notable Extreme Weather Probabilities</div>
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex gap-3 flex-wrap" >
                 {model?.extremes && Object.entries(model.extremes).filter(([k,v]) => v > 0.07).map(([k,v]) => (
-                  <div key={k} className="p-3 bg-black/20 rounded text-center" style={{ minWidth: 140 }}>
+                  <div key={k} className="p-3 bg-black/20 rounded text-center" style={{ minWidth: 210, borderRadius: '12px' }}>
                     <div className="text-sm text-nasa-muted uppercase" style={{ fontSize: '16px', fontFamily: "Bitter", textAlign: 'left', fontWeight: '800', padding: '0px 4px 10px 4px' }}>{prettyProbLabel(k)}</div>
-                    {/* <div className="text-xl font-bold">{Math.round(v*100)}<span className="text-sm">%</span></div> */}
-                    <div className="text-lg font-bold" style={{ fontSize: '32px', fontWeight: '900', paddingTop: '8px', paddingBottom:'8px' }}>{Math.round(v*100)}<span className="text-sm" style={{ fontSize: '18px', fontWeight: 600, paddingLeft: '10px' }}>%</span></div>
+                    <div className="text-lg font-bold" style={{ fontSize: '44px', fontWeight: '900', paddingTop: '16px', paddingBottom:'8px' }}>{Math.round(v*100)} <span style={{ fontSize: '18px', fontWeight: 600 }}>%</span></div>
                   </div>
                 ))}
                 {(!model?.extremes || Object.entries(model.extremes || {}).filter(([k,v]) => v > 0.07).length === 0) && (
@@ -202,9 +200,9 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
               <div className="text-sm text-nasa-muted mb-2 font-semibold" style={{ fontSize: '28px', padding: '20px 0px 16px 0px', textAlign: 'left' }}>Comfort Concerns</div>
               <div className="flex gap-3 flex-wrap">
                 {model?.comfort && Object.entries(model.comfort).filter(([k,v]) => v > 0.07).map(([k,v]) => (
-                  <div key={k} className="p-3 bg-black/20 rounded text-center" style={{ minWidth: 140 }}>
+                  <div key={k} className="p-3 bg-black/20 rounded text-center" style={{ minWidth: 210, borderRadius: '12px' }}>
                     <div className="text-sm text-nasa-muted uppercase" style={{ fontSize: '16px', fontFamily: "Bitter", textAlign: 'left', fontWeight: '800', padding: '0px 4px 10px 4px' }}>{k.replace(/_/g,' ')}</div>
-                    <div className="text-xl font-bold">{Math.round(v*100)}<span className="text-sm">%</span></div>
+                    <div className="text-lg font-bold" style={{ fontSize: '44px', fontWeight: '900', paddingTop: '16px', paddingBottom:'8px' }}>{Math.round(v*100)} <span style={{ fontSize: '18px', fontWeight: 600 }}>%</span></div>
                   </div>
                 ))}
                 {(!model?.comfort || Object.entries(model.comfort || {}).filter(([k,v]) => v > 0.07).length === 0) && (
@@ -212,9 +210,6 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
                 )}
               </div>
             </div>
-
-            {/* Description */}
-            <div className="mb-4 text-sm text-nasa-muted">{model?.description}</div>
 
             {/* Export CSV button */}
             <div className="flex justify-end">
