@@ -317,7 +317,9 @@ export default function WeatherLensMap() {
                 const size = 28;
                 return (
                   <g key={`pin`} transform={`translate(${pt[0] - size/2}, ${pt[1] - size})`} style={{ pointerEvents: 'none' }}>
-                    <image href="/pin.png" width={size} height={size} style={{ filter: 'brightness(1)' }} />
+                    {/* <image href="/pin.png" width={size} height={size} style={{ filter: 'brightness(1)' }} /> */}
+                     <img src="/pin.svg" className="w-16 h-12" alt="pin" />
+          
                     <text x={size/2} y={18} textAnchor="middle" fontSize={10} fill="white" style={{ color: '#777', fontFamily: '"Bitter", serif', fontWeight: 700 }}>
                       {`${pin.lon.toFixed(3)}, ${pin.lat.toFixed(3)}`}
                     </text>
