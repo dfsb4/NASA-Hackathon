@@ -137,6 +137,6 @@ def temperature(dataset: str = "merra2_t2m"):
     print("temperature download finished")
     
 if __name__ == "__main__":
-    precipitation()
+    # precipitation()
     temperature("merra2_t2m")
-    temperature("merra2_aer")
+    # temperature("merra2_aer")
