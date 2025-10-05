@@ -14,7 +14,7 @@ NASA-Hackthon/
 │
 └── frontend/                  # Vite + React Frontend for user interactions
     ├── src/
-    │   └── components/        # React components for chat and UI
+    │   └── components/        # React components for UI
     ├── package.json           # Node.js dependencies
     └── public/                # Public assets (e.g., index.html, images, and other static files)
 ```
@@ -130,22 +130,33 @@ git clone https://github.com/dfsb4/NASA-Hackathon.git
 
 ---
 
-## **Usage**
-
-- Open your browser and go to **[http://localhost:5173](http://localhost:5173)**
-- Enter your travel-related query in the chatbox.
-- The AI will provide relevant travel recommendations using the RAG + Gemini API pipeline.
+## **What It Does**
+- Provides intuitive comfort/risk cues (heat, humidity, wind, precipitation likelihood) and map-based city comparisons.
+- Offers a “backup” mode that suggests better time windows or alternative activities when weather is unfavorable.
+- Designed for travelers, event organizers, and volunteers who want quick, visual decisions.
 
 ---
 
-## **Troubleshooting**
+## Deployed URLs
 
-- **API Key Error:** Ensure `GEMINI_API_KEY` is correctly set in the `.env` file.
-- **Module Not Found:** Double-check if dependencies are installed:
-  - Backend: `pip install -r requirements.txt`
-  - Frontend: `npm install`
-- **Port Conflicts:** Ensure no other services are running on port `5000` or `5173`.
+Backend (Render): https://nasa-hackathon-3dwe.onrender.com
+
+Frontend (Vercel): https://nasa-hackathon-five.vercel.app/
+
 ---
+
+## Tech & Design Highlights
+
+Frontend: React + modern UI utilities for smooth geospatial interaction.
+
+Backend: Python-based service layer for model inference and data orchestration.
+
+Data: Open satellite/reanalysis sources; timestamps and uncertainty communicated in-app.
+
+UX: Color-safe indicators, mobile performance, accessibility, and multilingual readiness.
+
+Privacy: No personal data collection; sources and limitations clearly labeled.
+
 
 ## **License**
 
