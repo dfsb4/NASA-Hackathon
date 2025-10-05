@@ -317,10 +317,14 @@ export default function WeatherLensMap() {
                 const size = 28;
                 return (
                   <g key={`pin`} transform={`translate(${pt[0] - size/2}, ${pt[1] - size})`} style={{ pointerEvents: 'none' }}>
-                    {/* <image href="/pin.png" width={size} height={size} style={{ filter: 'brightness(1)' }} /> */}
-                     <img src="/pin.svg" className="w-16 h-12" alt="pin" />
-          
-                    <text x={size/2} y={18} textAnchor="middle" fontSize={10} fill="white" style={{ color: '#777', fontFamily: '"Bitter", serif', fontWeight: 700 }}>
+                    {/* Inline pin SVG so we can style the fill using CSS variables (supports --nasa--emulate with fallback) */}
+                    <svg width={size} height={size} viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" style={{ overflow: 'visible' }}>
+                      <path d="M14 0C9.029 0 5 4.03 5 9.01 5 16.01 14 28 14 28s9-11.99 9-18.99C23 4.03 18.971 0 14 0z" fill="var(--nasa-emerald)" />
+                      <circle cx="14" cy="9" r="3.5" fill="white" />
+                    </svg>
+
+                    {/* place label below the pin SVG (size + offset) and use CSS token for color */}
+                    <text x={size / 2} y={size + 12} textAnchor="middle" fontSize={10} fill="var(--nasa-muted)" style={{ fontFamily: '"Bitter", serif', fontWeight: 700 }}>
                       {`${pin.lon.toFixed(3)}, ${pin.lat.toFixed(3)}`}
                     </text>
                   </g>

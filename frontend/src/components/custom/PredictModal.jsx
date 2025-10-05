@@ -62,12 +62,12 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ fontFamily: '"DM Serif Display", serif' }}>
       <div onClick={onClose} className="absolute inset-0 bg-black/60"></div>
-      <div className="relative w-11/12 max-w-3xl bg-[#071122] rounded-2xl p-6 text-white" style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.6)' }}>
+      <div className="relative w-9/12 rounded-2xl p-6 text-white" style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.6)', backgroundColor: 'var(--nasa-deep)' }}>
         <div className="flex items-center justify-between mb-4">
-          <div className="text-lg font-semibold">Predict Weather</div>
-          <button onClick={onClose} className="text-sm text-nasa-muted px-3 py-1 rounded">Close</button>
+          <div className="text-lg font-semibold" style={{ fontSize: '32px' }}>Weather Prediction</div>
+          <button onClick={onClose} className="text-sm text-nasa-dark px-3 py-2 rounded" style={{ fontSize: '24px' }}>Close</button>
         </div>
 
         {!pin && (
@@ -80,7 +80,7 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
 
         {forecast && (
           <div>
-            <div className="mb-3 text-sm text-nasa-muted">Location: {pin ? `${pin.lat.toFixed(3)}, ${pin.lon.toFixed(3)}` : '—'}</div>
+            <div className="mb-3 text-sm text-nasa-muted" style={{ fontSize: '20px', flex: 1 }}>Location: {pin ? `${pin.lat.toFixed(3)}, ${pin.lon.toFixed(3)}` : '—'}</div>
             <div className="mb-6 font-semibold">Summary: {forecast.summary} — total {forecast.total} mm</div>
 
             <div className="w-full h-36 bg-black/20 rounded p-3 flex items-end gap-2">
