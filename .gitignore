@@ -10,7 +10,6 @@ backend/__pycache__/
 backend/utils/__pycache__/ 
 backend/month/__pycache__/
 backend/venv/
-backend/data/air_quality/*
 
 *.log
 
