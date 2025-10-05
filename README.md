@@ -86,8 +86,13 @@ git clone https://github.com/dfsb4/NASA-Hackathon.git
      EARTHDATA_USERNAME=dfsb4
      EARTHDATA_PASSWORD=Sbjerk4@gmail.com
      ```
-
-5. **Start the Backend Server:**
+5. **Download the Dataset**
+   ```bash
+   cd backend/utils
+   python download_mon.py
+   ```
+   
+6. **Start the Backend Server:**
 
    ```bash
    vicorn main:app --host 0.0.0.0 --port 8000 # For MacOS
