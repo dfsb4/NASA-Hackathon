@@ -267,6 +267,8 @@ export default function WeatherLensMap() {
                     geography={geo}
                     fill="#444"
                     stroke="#777"
+                    tabIndex={-1}
+                    focusable={false}
                     style={{
                       default: { outline: "none" },
                       hover: { fill: "var(--nasa-muted)", transition: "0.3s" },
@@ -340,9 +342,9 @@ export default function WeatherLensMap() {
       </div>
 
       {/* Footer block */}
-      <div className="w-full absolute bottom-0 left-0 bg-gray-800 text-white py-4 px-6 flex flex-col items-center gap-4" style={{ backgroundColor: 'var(--nasa-emerald)' }}>
+      <div className="w-full absolute bottom-0 left-0 p-3 shadow-sm flex flex-col items-center px-5 bg-nasa-dark-gray-azure/90 ring-1 ring-white/10 text-white gap-4">
         {/* Coordinate readout */}
-        <div className="text-sm absolute bottom-3 left-4" style={{ fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '18px', letterSpacing: '0.08em' }}>
+        <div className="text-sm absolute bottom-5 left-5" style={{ fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', letterSpacing: '0.08em' }}>
           Lon: {coords.lon || "--"}°E, Lat: {coords.lat || "--"}°N
         </div>
 
@@ -356,7 +358,7 @@ export default function WeatherLensMap() {
           )}
 
           <button
-          style={{ backgroundColor: 'var(--nasa-dark)' }}
+          style={{ backgroundColor: 'var(--nasa-deep)' }}
             onClick={() => setPredictOpen(true)}
             className="text-white px-6 py-3 rounded-full font-semibold justify-center"
           >
@@ -378,7 +380,7 @@ export default function WeatherLensMap() {
       
 
         {/* bottom-right: country name determined from current coords */}
-        <div className="absolute bottom-3 right-4 text-white text-sm text-right z-20" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '18px', padding: '8px', letterSpacing: '0.08em'}}>
+        <div className="absolute bottom-5 right-5 text-white text-sm text-right z-20" style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', padding: '8px', letterSpacing: '0.08em'}}>
             {country ? country : '—'}
         </div>
 
