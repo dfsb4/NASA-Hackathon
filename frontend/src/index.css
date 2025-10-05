@@ -182,3 +182,16 @@ button:focus-visible {
     stroke-width: 1px;
   }
 }
+
+/* Make native date/time picker icons appear white on supported browsers (WebKit) */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(200%) contrast(150%);
+  opacity: 1;
+}
+
+/* Firefox (partial) - remove native appearance so custom styling can be applied if needed */
+input[type="date"], input[type="time"] {
+  -moz-appearance: textfield;
+}
+

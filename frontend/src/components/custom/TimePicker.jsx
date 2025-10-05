@@ -38,34 +38,36 @@ export default function TimePicker({ isOpen, onClose, onSet, initialISO }) {
   for (let y = currentYear - 20; y <= currentYear + 5; y++) years.push(y)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ fontFamily: '"DM Serif Display", serif' }}>
       <div onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-      <div className="relative w-full max-w-2xl bg-[#0b1020] rounded-2xl p-6" style={{boxShadow: '0 8px 40px rgba(2,6,23,0.8)'}}>
+      <div className="relative w-9/12 rounded-2xl p-6" style={{boxShadow: '0 8px 40px rgba(2,6,23,0.8)', backgroundColor: 'var(--nasa-deep)'}}>
         <div className="flex items-center justify-between mb-4">
-          <button onClick={onClose} className="text-nasa-muted px-3 py-2">Cancel</button>
-          <div className="text-white text-xl font-semibold">Select date & time</div>
-          <button onClick={handleSet} className="text-nasa-muted px-3 py-2">Set</button>
+          {/* <button onClick={onClose} className="text-nasa-muted px-3 py-2">Cancel</button> */}
+          <button onClick={onClose} className="text-sm text-nasa-dark px-3 py-2 rounded" style={{ fontSize: '24px' }}>Cancel</button>
+          <div className="text-white text-xl font-semibold" style={{fontSize: '32px', paddingTop: '8px', paddingBottom: '20px'}}>Select date & time</div>
+          <button onClick={handleSet} className="text-sm text-nasa-dark px-3 py-2 rounded" style={{ fontSize: '24px' }}>Set</button>
+          {/* <button onClick={handleSet} className="text-nasa-muted px-3 py-2">Set</button> */}
         </div>
 
-        <div className="flex gap-6 items-center justify-center py-6">
+        <div className="flex gap-6 items-center justify-center py-6" >
           <div className="flex flex-col items-center">
-            <label className="text-sm text-nasa-muted mb-2">Date</label>
-            <input type="date" value={dateValue} onChange={(e) => setDateValue(e.target.value)} className="bg-transparent text-white p-3 rounded text-lg" />
+            <label className="text-sm text-nasa-muted mb-2" style={{fontSize: '24px'}}>Date</label>
+            <input type="date" value={dateValue} onChange={(e) => setDateValue(e.target.value)} className="bg-transparent text-white p-3 rounded text-lg" style={{fontSize: '24px'}} />
           </div>
 
           <div className="flex flex-col items-center">
-            <label className="text-sm text-nasa-muted mb-2">Time</label>
-            <input id="time-input" type="time" value={timeValue} onChange={(e) => setTimeValue(e.target.value)} step="60" className="bg-transparent text-white p-3 rounded text-3xl" />
+            <label className="text-sm text-nasa-muted mb-2" style={{fontSize: '24px'}}>Time</label>
+            <input id="time-input" type="time" value={timeValue} onChange={(e) => setTimeValue(e.target.value)} step="60" className="bg-transparent text-white p-3 rounded text-3xl" style={{fontSize: '24px'}} />
           </div>
 
-          <div className="flex flex-col items-center">
-            <label className="text-sm text-nasa-muted mb-2">Year</label>
+          {/* <div className="flex flex-col items-center">
+            <label className="text-sm text-nasa-muted mb-2" style={{fontSize: '24px'}}>Year</label>
             <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="bg-transparent text-white p-3 rounded text-lg">
               {years.map((y) => (
                 <option key={y} value={y}>{y}</option>
               ))}
             </select>
-          </div>
+          </div> */}
         </div>
 
         <div className="mt-2 text-sm text-nasa-muted text-center">Year will sync with selected date.</div>

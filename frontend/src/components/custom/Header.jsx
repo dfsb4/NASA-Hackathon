@@ -85,7 +85,7 @@ function Header() {
           <span className="text-sm font-semibold text-nasa-muted" style={{background: "var(--nasa-dark-gray-azure)", fontFamily: '"DM Serif Display", serif', fontWeight: '400', fontStyle: 'normal', display: "inline", color: "var(--nasa-muted)", fontSize: "32px", letterSpacing: '0.1em'}}>WeatherLens</span>
         </div>
         <div className="flex items-center gap-3 ml-auto pr-1">
-          <button onClick={openPicker} className="text-white px-4 py-2 rounded-full font-semibold">Time</button>
+          <button onClick={openPicker} className="text-white px-4 py-2 rounded-full font-semibold" style={{ backgroundColor: 'var(--nasa-deep)' }}>Time</button>
           <time className="time text-sm font-semibold text-nasa-muted" dateTime={(userTime || now.toISOString())} style={{fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', letterSpacing: '0.15em'}}>
             {userTime ? formatISO(userTime) : formatNow(now)}
           </time>
