@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from pydantic import BaseModel
@@ -8,11 +8,13 @@ from typing import List, Literal
 from pydantic import BaseModel, Field
 from datetime import datetime as dt
 import os
+import io
 
 from utils.plot import plot_all
 from month.precipitation import pred_precipitation
 from month.temperature import pred
 from month.air import pred_air_quality
+from utils.generate_csv import generate_monthly_csv
 
 app = FastAPI(title="My Monorepo API", version="0.1.0")
 
@@ -95,4 +97,25 @@ def get_monthly_weather(
         },
     }
     return JSONResponse(payload)
+
+@app.get("/api/history.csv")
+def get_history_csv(
+    request: Request,
+    latitude: float,
+    longitude: float,
+):
+    df = generate_monthly_csv(latitude, longitude)
+    if df.empty:
+        raise HTTPException(status_code=404, detail="No data found for the given parameters.")
+   
+    csv_io = io.StringIO()
+    df.to_csv(csv_io, index=False)
+    csv_io.seek(0)
+
+    filename = f"history_{latitude:.2f}_{longitude:.2f}.csv"
+    return StreamingResponse(
+        csv_io,
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
 # local test: uvicorn main:app --host 0.0.0.0 --port 8000
