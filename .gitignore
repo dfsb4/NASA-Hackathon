@@ -15,4 +15,6 @@ backend/venv/
 
 .vite/
 
+.DS_Store
+
 
