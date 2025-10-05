@@ -19,16 +19,66 @@ function simulateForecast(lat, lon, datetime) {
   return { hours, total: Math.round(total * 10) / 10, summary }
 }
 
+function simulateModelResults(lat, lon, hours) {
+  // derive simple simulated metrics from location + hourly precip
+  const avgTemp = 20 + ((lat || 0) % 10) + (Math.sin((lon || 0) * 0.1) * 5)
+  const avgHumidity = 50 + (Math.abs((lon || 0) % 20) * 1)
+  const avgWind = 3 + (Math.abs((lat || 0) % 5))
+  const precipTotal = hours.reduce((s, h) => s + h.precip, 0)
+  const airQuality = Math.max(10, Math.round(50 + (Math.abs(lat || 0) % 50)))
+
+  // extreme weather probabilities (simple heuristics)
+  const extremes = {
+    typhoon_probability: +(Math.max(0, 0.01 * (Math.abs(lon) > 120 ? 1 : 0)) ).toFixed(2),
+    heatwave_probability: +(Math.max(0, (avgTemp - 28) / 50)).toFixed(2),
+    cold_wave_probability: +(Math.max(0, (5 - avgTemp) / 50)).toFixed(2),
+    heavy_rain_probability: +Math.min(1, precipTotal / 30).toFixed(2),
+    strong_wind_probability: +Math.min(1, avgWind / 20).toFixed(2),
+    thunderstorm_probability: +Math.min(1, (precipTotal / 8)).toFixed(2),
+  }
+
+  // comfort probabilities
+  const comfort = {
+    very_hot: +(Math.max(0, (avgTemp - 30) / 10)).toFixed(2),
+    very_cold: +(Math.max(0, (0 - avgTemp) / 10)).toFixed(2),
+    very_windy: +(Math.max(0, (avgWind - 12) / 20)).toFixed(2),
+    very_wet: +(Math.min(1, avgHumidity / 120)).toFixed(2),
+    very_uncomfortable: +(Math.min(1, (avgHumidity/100 + Math.max(0,(avgTemp-28)/10)) / 2)).toFixed(2),
+  }
+
+  // description summarizing the most relevant bits
+  const highExt = Object.entries(extremes).sort((a,b)=>b[1]-a[1]).filter(([k,v])=>v>0.07).map(([k,v])=>`${k.replace(/_/g,' ')} ${Math.round(v*100)}%`)
+  const highComfort = Object.entries(comfort).sort((a,b)=>b[1]-a[1]).filter(([k,v])=>v>0.07).map(([k,v])=>`${k.replace(/_/g,' ')} ${Math.round(v*100)}%`)
+  let description = `Forecast: ${hours.length} hourly steps, total precip ${precipTotal} mm. `
+  if (highExt.length) description += `Notable extremes: ${highExt.join(', ')}. `
+  if (highComfort.length) description += `Comfort concerns: ${highComfort.join(', ')}.`
+
+  return {
+    metrics: {
+      temperature: +(avgTemp.toFixed(1)),
+      precipitation: +(precipTotal.toFixed(1)),
+      humidity: +(avgHumidity.toFixed(0)),
+      windspeed: +(avgWind.toFixed(1)),
+      air_quality: airQuality,
+    },
+    extremes,
+    comfort,
+    description,
+  }
+}
+
 export default function PredictModal({ isOpen, onClose, pin, datetime }) {
   const [loading, setLoading] = useState(false)
   const [forecast, setForecast] = useState(null)
   const [error, setError] = useState(null)
+  const [model, setModel] = useState(null)
 
   useEffect(() => {
     if (!isOpen) return
     setLoading(true)
     setError(null)
     setForecast(null)
+    setModel(null)
 
     // attempt to call backend predict API; fall back to simulated data on failure
     const doFetch = async () => {
@@ -40,15 +90,19 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
         })
         if (!resp.ok) throw new Error(`server ${resp.status}`)
         const json = await resp.json()
+        // if backend returns an enriched model, use it; else we'll generate later
         setForecast(json)
+        if (json.model) setModel(json.model)
       } catch (e) {
         // fallback to simulated forecast
         const lat = pin?.lat ?? 0
         const lon = pin?.lon ?? 0
         const sim = simulateForecast(lat, lon, datetime)
+        const simModel = simulateModelResults(lat, lon, sim.hours)
         // small delay to simulate network
         setTimeout(() => {
           setForecast(sim)
+          setModel(simModel)
           setLoading(false)
         }, 600)
         return
@@ -80,11 +134,57 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
 
         {forecast && (
           <div>
-            <div className="mb-3 text-sm text-nasa-muted" style={{ fontSize: '20px', flex: 1 }}>Location: {pin ? `${pin.lat.toFixed(3)}, ${pin.lon.toFixed(3)}` : '—'}</div>
-            <div className="mb-6 font-semibold">Summary: {forecast.summary} — total {forecast.total} mm</div>
+            <div className="mb-3 text-sm text-nasa-muted" style={{ fontSize: '20px', flex: 1 }}>
+              Location: {pin ? `${Math.abs(pin.lat).toFixed(3)}°${pin.lat >= 0 ? 'N' : 'S'}, ${Math.abs(pin.lon).toFixed(3)}°${pin.lon >= 0 ? 'E' : 'W'}` : '—'}
+            </div>
 
-            <div className="w-full h-36 bg-black/20 rounded p-3 flex items-end gap-2">
-              {/* simple bar chart for hourly precipitation */}
+            <div className="mb-4 font-semibold">Summary: {forecast.summary} — total {forecast.total} mm</div>
+
+            {/* Metrics tiles: temperature, precipitation, humidity, windspeed, air_quality */}
+            <div className="grid grid-cols-5 gap-3 mb-4">
+              {model?.metrics ? (
+                Object.entries(model.metrics).map(([k,v]) => (
+                  <div key={k} className="p-3 bg-black/20 rounded text-center">
+                    <div className="text-sm text-nasa-muted uppercase">{k.replace('_',' ')}</div>
+                    <div className="text-lg font-bold">{v}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-5 text-sm text-nasa-muted">Model results not available.</div>
+              )}
+            </div>
+
+            {/* Extremes: show only entries with probability > 0.07 */}
+            <div className="mb-3">
+              <div className="text-sm text-nasa-muted mb-2 font-semibold">Notable extreme weather probabilities</div>
+              <div className="flex gap-3 flex-wrap">
+                {model?.extremes && Object.entries(model.extremes).filter(([k,v]) => v > 0.07).map(([k,v]) => (
+                  <div key={k} className="px-3 py-2 bg-black/20 rounded">{k.replace(/_/g,' ')}: {(v*100).toFixed(0)}%</div>
+                ))}
+                {(!model?.extremes || Object.entries(model.extremes || {}).filter(([k,v]) => v > 0.07).length === 0) && (
+                  <div className="text-sm text-nasa-muted">No high-probability extremes detected.</div>
+                )}
+              </div>
+            </div>
+
+            {/* Comfort */}
+            <div className="mb-3">
+              <div className="text-sm text-nasa-muted mb-2 font-semibold">Comfort concerns</div>
+              <div className="flex gap-3 flex-wrap">
+                {model?.comfort && Object.entries(model.comfort).filter(([k,v]) => v > 0.07).map(([k,v]) => (
+                  <div key={k} className="px-3 py-2 bg-black/20 rounded">{k.replace(/_/g,' ')}: {(v*100).toFixed(0)}%</div>
+                ))}
+                {(!model?.comfort || Object.entries(model.comfort || {}).filter(([k,v]) => v > 0.07).length === 0) && (
+                  <div className="text-sm text-nasa-muted">No major comfort concerns.</div>
+                )}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="mb-4 text-sm text-nasa-muted">{model?.description}</div>
+
+            {/* Hourly bar chart */}
+            <div className="w-full h-36 bg-black/20 rounded p-3 flex items-end gap-2 mb-4">
               {forecast.hours.map((h, i) => {
                 const max = Math.max(...forecast.hours.map((x) => x.precip), 1)
                 const height = Math.round((h.precip / max) * 100)
@@ -96,6 +196,34 @@ export default function PredictModal({ isOpen, onClose, pin, datetime }) {
                   </div>
                 )
               })}
+            </div>
+
+            {/* Export CSV button */}
+            <div className="flex justify-end">
+              <button
+                onClick={() => {
+                  // build CSV: hours + metrics
+                  const rows = []
+                  rows.push(['time','precip_mm'])
+                  forecast.hours.forEach(h => rows.push([h.time, h.precip]))
+                  rows.push([])
+                  rows.push(['metric','value'])
+                  if (model?.metrics) Object.entries(model.metrics).forEach(([k,v]) => rows.push([k,v]))
+                  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n')
+                  const blob = new Blob([csv], { type: 'text/csv' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `forecast_${Date.now()}.csv`
+                  document.body.appendChild(a)
+                  a.click()
+                  a.remove()
+                  URL.revokeObjectURL(url)
+                }}
+                className="px-4 py-2 rounded bg-white text-black font-semibold"
+              >
+                Export CSV
+              </button>
             </div>
 
             <div className="mt-4 text-sm text-nasa-muted">This forecast is simulated when the backend is unavailable.</div>

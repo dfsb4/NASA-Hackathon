@@ -59,6 +59,20 @@ export default function WeatherLensMap() {
     return { x, y };
   };
 
+  // Coordinate formatting helpers
+  const fmtLat = (lat) => {
+    if (lat === null || lat === undefined || Number.isNaN(lat)) return '--';
+    const abs = Math.abs(Number(lat));
+    const dir = lat >= 0 ? 'N' : 'S';
+    return `${abs.toFixed(3)}°${dir}`;
+  }
+  const fmtLon = (lon) => {
+    if (lon === null || lon === undefined || Number.isNaN(lon)) return '--';
+    const abs = Math.abs(Number(lon));
+    const dir = lon >= 0 ? 'E' : 'W';
+    return `${abs.toFixed(3)}°${dir}`;
+  }
+
   // Compute and set lat/lon for display using the current projection + panY
   const updateCoordsFromClient = (clientX, clientY, rotLon = rotationLon, currentPanY = panY) => {
     if (!containerRef.current) return;
@@ -69,7 +83,8 @@ export default function WeatherLensMap() {
     const inverted = proj.invert(adj);
     if (inverted) {
       const [lon, lat] = inverted;
-      setCoords({ lat: lat.toFixed(3), lon: lon.toFixed(3) });
+      // store numeric coords for later formatting
+      setCoords({ lat, lon });
       // look up country name (if geographies loaded)
       findCountryFromLonLat(lon, lat);
     }
@@ -321,13 +336,13 @@ export default function WeatherLensMap() {
                   <g key={`pin`} transform={`translate(${pt[0] - size/2}, ${pt[1] - size})`} style={{ pointerEvents: 'none' }}>
                     {/* Inline pin SVG so we can style the fill using CSS variables (supports --nasa--emulate with fallback) */}
                     <svg width={size} height={size} viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" style={{ overflow: 'visible' }}>
-                      <path d="M14 0C9.029 0 5 4.03 5 9.01 5 16.01 14 28 14 28s9-11.99 9-18.99C23 4.03 18.971 0 14 0z" fill="var(--nasa-emerald)" />
+                      <path d="M14 0C9.029 0 5 4.03 5 9.01 5 16.01 14 28 14 28s9-11.99 9-18.99C23 4.03 18.971 0 14 0z" fill="var(--nasa-azure)" />
                       <circle cx="14" cy="9" r="3.5" fill="white" />
                     </svg>
 
                     {/* place label below the pin SVG (size + offset) and use CSS token for color */}
                     <text x={size / 2} y={size + 12} textAnchor="middle" fontSize={10} fill="var(--nasa-muted)" style={{ fontFamily: '"Bitter", serif', fontWeight: 700 }}>
-                      {`${pin.lon.toFixed(3)}, ${pin.lat.toFixed(3)}`}
+                      {`${fmtLon(pin.lon)} , ${fmtLat(pin.lat)}`}
                     </text>
                   </g>
                 );
@@ -345,7 +360,11 @@ export default function WeatherLensMap() {
       <div className="w-full absolute bottom-0 left-0 p-3 shadow-sm flex flex-col items-center px-5 bg-nasa-dark-gray-azure/90 ring-1 ring-white/10 text-white gap-4">
         {/* Coordinate readout */}
         <div className="text-sm absolute bottom-5 left-5" style={{ fontFamily: '"Bitter", serif', fontWeight: '700', fontSize: '24px', letterSpacing: '0.08em' }}>
+<<<<<<< HEAD
           Lon: {coords.lon || "--"}°E, Lat: {coords.lat || "--"}°N
+=======
+         {fmtLon(coords.lon)} , {fmtLat(coords.lat)}
+>>>>>>> c10cf997e168afec6fedabcdf7a7d370b84024da
         </div>
 
 
